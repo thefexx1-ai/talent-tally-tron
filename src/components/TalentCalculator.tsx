@@ -5,7 +5,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Minus, Trophy, Users, Gavel, Sun, Moon, Languages } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Plus, Minus, Trophy, Users, Gavel, Sun, Moon, Languages, Eye, EyeOff, BookOpen } from 'lucide-react';
 
 interface Judge {
   id: number;
@@ -14,6 +15,13 @@ interface Judge {
   quality: number;
   specialCriteria: number[];
   isHalfWeight: boolean;
+  isExcluded: boolean;
+}
+
+interface BiasData {
+  zScore: number;
+  flag: 'green' | 'yellow' | 'red';
+  emoji: string;
 }
 
 interface CalculationResult {
@@ -23,25 +31,26 @@ interface CalculationResult {
   audienceEffective: number;
   judgeAverages: number[];
   specialCriteriaAverages: number[];
+  biasData: BiasData[];
 }
 
 const TalentCalculator = () => {
   const [judges, setJudges] = useState<Judge[]>([
-    { id: 1, name: 'Judge 1', creativity: 0, quality: 0, specialCriteria: [0], isHalfWeight: false }
+    { id: 1, name: 'Judge 1', creativity: 0, quality: 0, specialCriteria: [0], isHalfWeight: false, isExcluded: false }
   ]);
   const [isArabic, setIsArabic] = useState<boolean>(false);
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(true);
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
   const [audienceVoters, setAudienceVoters] = useState<number>(0);
   const [audiencePoints, setAudiencePoints] = useState<number>(0);
   const [controlConstant, setControlConstant] = useState<number>(20);
   const [result, setResult] = useState<CalculationResult | null>(null);
   const [showBreakdown, setShowBreakdown] = useState<boolean>(false);
+  const [showTransparency, setShowTransparency] = useState<boolean>(false);
 
   // Translations
   const translations = {
     en: {
       title: "Rustic Got Talent Calculator",
-      subtitle: "Calculate contestant scores with precision and transparency",
       withRegards: "With regards of COT",
       judges: "Judges",
       judgeLabel: "Judge",
@@ -51,8 +60,8 @@ const TalentCalculator = () => {
       addJudge: "Add Judge",
       addCriteria: "Add Criteria",
       removeCriteria: "Remove Criteria",
-      halfWeight: "Half Weight",
-      fullWeight: "Full Weight",
+      halfImpact: "Half Impact",
+      fullImpact: "Full Impact",
       audienceVoting: "Audience Voting",
       numberOfVoters: "Number of Voters",
       totalAudiencePoints: "Total Audience Points",
@@ -66,12 +75,18 @@ const TalentCalculator = () => {
       calculationBreakdown: "Calculation Breakdown",
       judgeAverages: "Judge Averages:",
       formulaResults: "Formula Results:",
+      biasDetection: "Bias Detection",
+      excludeJudge: "Exclude Judge",
+      includeJudge: "Include Judge",
+      biasTooltip: "Z-score:",
+      exploreLogic: "Explore the full calculation logic behind Rustic Got Talent",
+      transparencyTitle: "Calculation Logic & Formulas",
+      backToCalculator: "Back to Calculator",
       copyright: "© for Rustic Kingdom 🗝️ | developer: Adham"
     },
     ar: {
-      title: "حاسبة مواهب الريفية",
-      subtitle: "احسب نقاط المتسابقين بدقة وشفافية",
-      withRegards: "مع خالص التقدير من COT",
+      title: "حاسبة مواهب راستيك",
+      withRegards: "مع تحيات فيلق المواهب",
       judges: "القضاة",
       judgeLabel: "القاضي",
       creativity: "الإبداع (0-10)",
@@ -80,8 +95,8 @@ const TalentCalculator = () => {
       addJudge: "إضافة قاضي",
       addCriteria: "إضافة معيار",
       removeCriteria: "إزالة معيار",
-      halfWeight: "نصف الوزن",
-      fullWeight: "الوزن الكامل",
+      halfImpact: "نصف التأثير",
+      fullImpact: "التأثير الكامل",
       audienceVoting: "تصويت الجمهور",
       numberOfVoters: "عدد المصوتين",
       totalAudiencePoints: "إجمالي نقاط الجمهور",
@@ -95,18 +110,21 @@ const TalentCalculator = () => {
       calculationBreakdown: "تفصيل الحساب",
       judgeAverages: "متوسط القضاة:",
       formulaResults: "نتائج الصيغة:",
-      copyright: "© لمملكة الريفية 🗝️ | المطور: أدهم"
+      biasDetection: "كشف التحيز",
+      excludeJudge: "استبعاد القاضي",
+      includeJudge: "تضمين القاضي",
+      biasTooltip: "نقاط Z:",
+      exploreLogic: "استكشاف منطق الحساب الكامل وراء مواهب راستيك",
+      transparencyTitle: "منطق الحساب والصيغ",
+      backToCalculator: "العودة للحاسبة",
+      copyright: "© مملكة راستيك 🗝️ | المطور: أدهم"
     }
   };
 
   const t = translations[isArabic ? 'ar' : 'en'];
 
   useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    document.documentElement.classList.toggle('dark', isDarkMode);
   }, [isDarkMode]);
 
   const addJudge = () => {
@@ -116,7 +134,8 @@ const TalentCalculator = () => {
       creativity: 0,
       quality: 0,
       specialCriteria: [0],
-      isHalfWeight: false
+      isHalfWeight: false,
+      isExcluded: false
     };
     setJudges([...judges, newJudge]);
   };
@@ -162,27 +181,69 @@ const TalentCalculator = () => {
     ));
   };
 
+  const calculateBiasData = (judgeAverages: number[]): BiasData[] => {
+    const activeJudges = judges.filter(judge => !judge.isExcluded);
+    const activeAverages = judgeAverages.filter((_, index) => !judges[index].isExcluded);
+    
+    if (activeAverages.length === 0) return [];
+    
+    const mean = activeAverages.reduce((acc, avg) => acc + avg, 0) / activeAverages.length;
+    const variance = activeAverages.reduce((acc, avg) => acc + Math.pow(avg - mean, 2), 0) / activeAverages.length;
+    const stdDev = Math.sqrt(variance);
+    
+    return judgeAverages.map((avg, index) => {
+      if (judges[index].isExcluded) {
+        return { zScore: 0, flag: 'green' as const, emoji: '🟢' };
+      }
+      
+      const zScore = stdDev === 0 ? 0 : (avg - mean) / stdDev;
+      const absZ = Math.abs(zScore);
+      
+      let flag: 'green' | 'yellow' | 'red' = 'green';
+      let emoji = '🟢';
+      
+      if (absZ > 2) {
+        flag = 'red';
+        emoji = '🔴';
+      } else if (absZ > 1) {
+        flag = 'yellow';
+        emoji = '🟡';
+      }
+      
+      return { zScore, flag, emoji };
+    });
+  };
+
   const calculateResult = () => {
+    // Filter out excluded judges
+    const activeJudges = judges.filter(judge => !judge.isExcluded);
+    
+    if (activeJudges.length === 0) return;
+
     // Calculate special criteria averages for each judge
     const specialCriteriaAverages = judges.map(judge => {
       const sum = judge.specialCriteria.reduce((acc, criteria) => acc + criteria, 0);
       return sum / judge.specialCriteria.length;
     });
 
-    // Calculate judge averages
+    // Calculate judge averages (including excluded judges for bias calculation)
     const judgeAverages = judges.map((judge, index) => {
       const average = (judge.creativity + judge.quality + specialCriteriaAverages[index]) / 3;
       return judge.isHalfWeight ? average / 2 : average;
     });
 
-    // Calculate overall judges average
-    const judgesAverage = judgeAverages.reduce((acc, avg) => acc + avg, 0) / judges.length;
+    // Calculate bias data
+    const biasData = calculateBiasData(judgeAverages);
+
+    // Calculate overall judges average (only active judges)
+    const activeAverages = judgeAverages.filter((_, index) => !judges[index].isExcluded);
+    const judgesAverage = activeAverages.reduce((acc, avg) => acc + avg, 0) / activeAverages.length;
 
     // Calculate audience average
     const audienceAverage = audienceVoters > 0 ? audiencePoints / audienceVoters : 0;
 
     // Calculate effective M value
-    const M = Math.max(judges.length * 10, controlConstant);
+    const M = Math.max(activeJudges.length * 10, controlConstant);
 
     // Calculate audience effective
     const audienceEffective = audienceVoters > 0 
@@ -198,7 +259,8 @@ const TalentCalculator = () => {
       audienceAverage,
       audienceEffective,
       judgeAverages,
-      specialCriteriaAverages
+      specialCriteriaAverages,
+      biasData
     });
     setShowBreakdown(true);
   };
@@ -241,9 +303,6 @@ const TalentCalculator = () => {
           <h1 className="text-4xl md:text-5xl font-bold bg-gradient-royal bg-clip-text text-transparent mb-2">
             {t.title}
           </h1>
-          <p className="text-muted-foreground text-lg mb-2">
-            {t.subtitle}
-          </p>
           <p className="text-royal-gold-light text-base italic">
             {t.withRegards}
           </p>
@@ -275,12 +334,22 @@ const TalentCalculator = () => {
                       <div className="flex items-center gap-2 ml-4">
                         <div className="flex items-center gap-2">
                           <Label className="text-xs">
-                            {judge.isHalfWeight ? t.halfWeight : t.fullWeight}
+                            {judge.isHalfWeight ? t.halfImpact : t.fullImpact}
                           </Label>
                           <Switch
                             checked={judge.isHalfWeight}
                             onCheckedChange={(checked) => updateJudge(judge.id, 'isHalfWeight', checked)}
                           />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant={judge.isExcluded ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => updateJudge(judge.id, 'isExcluded', !judge.isExcluded)}
+                            className={judge.isExcluded ? "bg-destructive text-destructive-foreground" : ""}
+                          >
+                            {judge.isExcluded ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                          </Button>
                         </div>
                         {judges.length > 1 && (
                           <Button
@@ -479,9 +548,27 @@ const TalentCalculator = () => {
                     <div>
                       <h4 className="font-semibold text-royal-gold-light mb-2">{t.judgeAverages}</h4>
                       {result.judgeAverages.map((avg, index) => (
-                        <div key={index} className="flex justify-between">
-                          <span>{judges[index]?.name || `${t.judgeLabel} ${index + 1}`}:</span>
-                          <span className="font-mono">{avg.toFixed(2)} {judges[index]?.isHalfWeight ? '(Half)' : ''}</span>
+                        <div key={index} className="flex justify-between items-center">
+                          <span className="flex items-center gap-2">
+                            {judges[index]?.name || `${t.judgeLabel} ${index + 1}`}:
+                            {result.biasData[index] && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <span>{result.biasData[index].emoji}</span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{t.biasTooltip} {result.biasData[index].zScore.toFixed(2)}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </span>
+                          <span className="font-mono">
+                            {avg.toFixed(2)} 
+                            {judges[index]?.isHalfWeight ? ' (Half)' : ''} 
+                            {judges[index]?.isExcluded ? ' (Excluded)' : ''}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -491,9 +578,10 @@ const TalentCalculator = () => {
                     <div>
                       <h4 className="font-semibold text-royal-gold-light mb-2">{t.formulaResults}</h4>
                       <div className="space-y-1 font-mono text-xs">
+                        <div>Active Judges = {judges.filter(j => !j.isExcluded).length}</div>
                         <div>Judges Avg = {result.judgesAverage.toFixed(2)}</div>
                         <div>Audience Avg = {result.audienceAverage.toFixed(2)}</div>
-                        <div>M = {Math.max(judges.length * 10, controlConstant)}</div>
+                        <div>M = {Math.max(judges.filter(j => !j.isExcluded).length * 10, controlConstant)}</div>
                         <div>Audience Effective = {result.audienceEffective.toFixed(2)}</div>
                         <div className="text-royal-gold">
                           Final = ({result.judgesAverage.toFixed(2)} × 0.75) + ({result.audienceEffective.toFixed(2)} × 0.25) = {result.finalScore.toFixed(2)}
@@ -506,6 +594,120 @@ const TalentCalculator = () => {
             </div>
           )}
         </div>
+        
+        {/* Transparency Link */}
+        <div className="text-center mt-8">
+          <Button
+            variant="ghost"
+            onClick={() => setShowTransparency(true)}
+            className="text-royal-gold hover:text-royal-gold-light underline"
+          >
+            <BookOpen className="h-4 w-4 mr-2" />
+            {t.exploreLogic}
+          </Button>
+        </div>
+
+        {/* Transparency Modal/Page */}
+        {showTransparency && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-card max-w-4xl w-full max-h-[90vh] overflow-y-auto rounded-lg border border-royal-gold/30">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-royal-gold">{t.transparencyTitle}</h2>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowTransparency(false)}
+                  >
+                    ✕
+                  </Button>
+                </div>
+                
+                <div className="space-y-6 text-sm">
+                  <div>
+                    <h3 className="font-semibold text-royal-gold-light mb-2">1. Special Criteria Average (per judge)</h3>
+                    <p className="font-mono bg-muted/30 p-2 rounded">
+                      Special_Criteria_Avg = (Criterion₁ + Criterion₂ + ... + Criterionₙ) ÷ n
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-semibold text-royal-gold-light mb-2">2. Judge Average</h3>
+                    <p className="font-mono bg-muted/30 p-2 rounded">
+                      Judge_Avg = (Creativity + Quality + Special_Criteria_Avg) ÷ 3
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      If half impact: Judge_Avg = Judge_Avg ÷ 2
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-semibold text-royal-gold-light mb-2">3. Overall Judges Average</h3>
+                    <p className="font-mono bg-muted/30 p-2 rounded">
+                      Judges_Avg = (Judge₁_Avg + Judge₂_Avg + ... + Judgeₙ_Avg) ÷ n
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Only active (non-excluded) judges are included
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-semibold text-royal-gold-light mb-2">4. Audience Average</h3>
+                    <p className="font-mono bg-muted/30 p-2 rounded">
+                      Audience_Avg = Total_Audience_Points ÷ Number_of_Voters
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-semibold text-royal-gold-light mb-2">5. Audience Effective (diminishing returns)</h3>
+                    <p className="font-mono bg-muted/30 p-2 rounded">
+                      Audience_Effective = (N × Audience_Avg + M × Judges_Avg) ÷ (N + M)
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Where: N = Number of voters, M = max(Active_Judges × 10, Control_Constant)
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-semibold text-royal-gold-light mb-2">6. Final Score</h3>
+                    <p className="font-mono bg-muted/30 p-2 rounded">
+                      Final_Score = (Judges_Avg × 0.75) + (Audience_Effective × 0.25)
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-semibold text-royal-gold-light mb-2">7. Bias Detection (Z-Score Method)</h3>
+                    <div className="space-y-2">
+                      <p className="font-mono bg-muted/30 p-2 rounded">
+                        Mean = Judges_Avg
+                      </p>
+                      <p className="font-mono bg-muted/30 p-2 rounded">
+                        StdDev = √(Σ(Judge_Avgᵢ - Mean)² ÷ n)
+                      </p>
+                      <p className="font-mono bg-muted/30 p-2 rounded">
+                        Z_Score = (Judge_Avg - Mean) ÷ StdDev
+                      </p>
+                      <div className="text-xs space-y-1">
+                        <p>🟢 Green: |Z| ≤ 1 (fair/consistent)</p>
+                        <p>🟡 Yellow: 1 &lt; |Z| ≤ 2 (suspicious/borderline)</p>
+                        <p>🔴 Red: |Z| &gt; 2 (biased/outlier)</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-6 pt-4 border-t border-royal-gold/20">
+                  <Button
+                    onClick={() => setShowTransparency(false)}
+                    className="w-full bg-gradient-royal hover:opacity-90 text-primary-foreground"
+                  >
+                    {t.backToCalculator}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         
         {/* Footer */}
         <footer className="text-center mt-12 py-6 border-t border-royal-gold/20">
