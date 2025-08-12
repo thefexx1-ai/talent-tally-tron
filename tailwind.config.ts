@@ -52,16 +52,27 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
-				sidebar: {
-					DEFAULT: 'hsl(var(--sidebar-background))',
-					foreground: 'hsl(var(--sidebar-foreground))',
-					primary: 'hsl(var(--sidebar-primary))',
-					'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
-					accent: 'hsl(var(--sidebar-accent))',
-					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-					border: 'hsl(var(--sidebar-border))',
-					ring: 'hsl(var(--sidebar-ring))'
+				// Kingdom Theme Colors
+				royal: {
+					gold: 'hsl(var(--royal-gold))',
+					'gold-light': 'hsl(var(--royal-gold-light))',
+					'gold-dark': 'hsl(var(--royal-gold-dark))'
+				},
+				kingdom: {
+					dark: 'hsl(var(--kingdom-dark))',
+					darker: 'hsl(var(--kingdom-darker))',
+					light: 'hsl(var(--kingdom-light))'
 				}
+			},
+			backgroundImage: {
+				'gradient-royal': 'var(--gradient-royal)',
+				'gradient-kingdom': 'var(--gradient-kingdom)',
+				'gradient-accent': 'var(--gradient-accent)'
+			},
+			boxShadow: {
+				'royal': 'var(--shadow-royal)',
+				'kingdom': 'var(--shadow-kingdom)',
+				'glow': 'var(--shadow-glow)'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
