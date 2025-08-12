@@ -1,16 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Plus, Minus, Trophy, Users, Gavel } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Plus, Minus, Trophy, Users, Gavel, Sun, Moon, Languages } from 'lucide-react';
 
 interface Judge {
   id: number;
+  name: string;
   creativity: number;
   quality: number;
   specialCriteria: number[];
+  isHalfWeight: boolean;
 }
 
 interface CalculationResult {
@@ -24,20 +27,96 @@ interface CalculationResult {
 
 const TalentCalculator = () => {
   const [judges, setJudges] = useState<Judge[]>([
-    { id: 1, creativity: 0, quality: 0, specialCriteria: [0] }
+    { id: 1, name: 'Judge 1', creativity: 0, quality: 0, specialCriteria: [0], isHalfWeight: false }
   ]);
+  const [isArabic, setIsArabic] = useState<boolean>(false);
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(true);
   const [audienceVoters, setAudienceVoters] = useState<number>(0);
   const [audiencePoints, setAudiencePoints] = useState<number>(0);
   const [controlConstant, setControlConstant] = useState<number>(20);
   const [result, setResult] = useState<CalculationResult | null>(null);
   const [showBreakdown, setShowBreakdown] = useState<boolean>(false);
 
+  // Translations
+  const translations = {
+    en: {
+      title: "Rustic Got Talent Calculator",
+      subtitle: "Calculate contestant scores with precision and transparency",
+      withRegards: "With regards of COT",
+      judges: "Judges",
+      judgeLabel: "Judge",
+      creativity: "Creativity (0-10)",
+      quality: "Quality (0-10)",
+      specialCriteria: "Special Criteria",
+      addJudge: "Add Judge",
+      addCriteria: "Add Criteria",
+      removeCriteria: "Remove Criteria",
+      halfWeight: "Half Weight",
+      fullWeight: "Full Weight",
+      audienceVoting: "Audience Voting",
+      numberOfVoters: "Number of Voters",
+      totalAudiencePoints: "Total Audience Points",
+      controlConstant: "Control Constant (M)",
+      calculateResult: "Calculate Result",
+      finalResults: "Final Results",
+      finalScore: "Final Score",
+      judgesAverage: "Judges Average",
+      audienceAverage: "Audience Average",
+      audienceEffective: "Audience Effective",
+      calculationBreakdown: "Calculation Breakdown",
+      judgeAverages: "Judge Averages:",
+      formulaResults: "Formula Results:",
+      copyright: "© for Rustic Kingdom 🗝️ | developer: Adham"
+    },
+    ar: {
+      title: "حاسبة مواهب الريفية",
+      subtitle: "احسب نقاط المتسابقين بدقة وشفافية",
+      withRegards: "مع خالص التقدير من COT",
+      judges: "القضاة",
+      judgeLabel: "القاضي",
+      creativity: "الإبداع (0-10)",
+      quality: "الجودة (0-10)",
+      specialCriteria: "المعايير الخاصة",
+      addJudge: "إضافة قاضي",
+      addCriteria: "إضافة معيار",
+      removeCriteria: "إزالة معيار",
+      halfWeight: "نصف الوزن",
+      fullWeight: "الوزن الكامل",
+      audienceVoting: "تصويت الجمهور",
+      numberOfVoters: "عدد المصوتين",
+      totalAudiencePoints: "إجمالي نقاط الجمهور",
+      controlConstant: "ثابت التحكم (M)",
+      calculateResult: "احسب النتيجة",
+      finalResults: "النتائج النهائية",
+      finalScore: "النتيجة النهائية",
+      judgesAverage: "متوسط القضاة",
+      audienceAverage: "متوسط الجمهور",
+      audienceEffective: "الجمهور الفعال",
+      calculationBreakdown: "تفصيل الحساب",
+      judgeAverages: "متوسط القضاة:",
+      formulaResults: "نتائج الصيغة:",
+      copyright: "© لمملكة الريفية 🗝️ | المطور: أدهم"
+    }
+  };
+
+  const t = translations[isArabic ? 'ar' : 'en'];
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
+
   const addJudge = () => {
     const newJudge: Judge = {
       id: Date.now(),
+      name: `${t.judgeLabel} ${judges.length + 1}`,
       creativity: 0,
       quality: 0,
-      specialCriteria: [0]
+      specialCriteria: [0],
+      isHalfWeight: false
     };
     setJudges([...judges, newJudge]);
   };
@@ -92,7 +171,8 @@ const TalentCalculator = () => {
 
     // Calculate judge averages
     const judgeAverages = judges.map((judge, index) => {
-      return (judge.creativity + judge.quality + specialCriteriaAverages[index]) / 3;
+      const average = (judge.creativity + judge.quality + specialCriteriaAverages[index]) / 3;
+      return judge.isHalfWeight ? average / 2 : average;
     });
 
     // Calculate overall judges average
@@ -124,10 +204,33 @@ const TalentCalculator = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-kingdom py-8 px-4">
+    <div className={`min-h-screen bg-gradient-kingdom py-8 px-4 ${isArabic ? 'rtl' : 'ltr'}`} dir={isArabic ? 'rtl' : 'ltr'}>
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
+        {/* Header with Controls */}
         <div className="text-center mb-8">
+          {/* Language and Theme Controls */}
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsArabic(!isArabic)}
+                className="border-royal-gold/30 hover:border-royal-gold"
+              >
+                <Languages className="h-4 w-4 mr-2" />
+                {isArabic ? 'EN' : 'عربي'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                className="border-royal-gold/30 hover:border-royal-gold"
+              >
+                {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
+          
           <div className="flex justify-center mb-4">
             <img 
               src="/lovable-uploads/2b78c987-4b6c-4e70-80d6-994ab851d407.png" 
@@ -136,10 +239,13 @@ const TalentCalculator = () => {
             />
           </div>
           <h1 className="text-4xl md:text-5xl font-bold bg-gradient-royal bg-clip-text text-transparent mb-2">
-            Rustic Got Talent Calculator
+            {t.title}
           </h1>
-          <p className="text-muted-foreground text-lg">
-            Calculate contestant scores with precision and transparency
+          <p className="text-muted-foreground text-lg mb-2">
+            {t.subtitle}
+          </p>
+          <p className="text-royal-gold-light text-base italic">
+            {t.withRegards}
           </p>
         </div>
 
@@ -151,28 +257,46 @@ const TalentCalculator = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-royal-gold">
                   <Gavel className="h-5 w-5" />
-                  Judges ({judges.length})
+                  {t.judges} ({judges.length})
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {judges.map((judge, judgeIndex) => (
                   <div key={judge.id} className="space-y-3 p-4 bg-muted/30 rounded-lg">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-semibold text-royal-gold-light">Judge {judgeIndex + 1}</h4>
-                      {judges.length > 1 && (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => removeJudge(judge.id)}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                      )}
+                      <div className="flex-1">
+                        <Input
+                          value={judge.name}
+                          onChange={(e) => updateJudge(judge.id, 'name', e.target.value)}
+                          className="bg-background/80 font-semibold text-royal-gold-light"
+                          placeholder={`${t.judgeLabel} ${judgeIndex + 1}`}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 ml-4">
+                        <div className="flex items-center gap-2">
+                          <Label className="text-xs">
+                            {judge.isHalfWeight ? t.halfWeight : t.fullWeight}
+                          </Label>
+                          <Switch
+                            checked={judge.isHalfWeight}
+                            onCheckedChange={(checked) => updateJudge(judge.id, 'isHalfWeight', checked)}
+                          />
+                        </div>
+                        {judges.length > 1 && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => removeJudge(judge.id)}
+                          >
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                     
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <Label htmlFor={`creativity-${judge.id}`}>Creativity (0-10)</Label>
+                        <Label htmlFor={`creativity-${judge.id}`}>{t.creativity}</Label>
                         <Input
                           id={`creativity-${judge.id}`}
                           type="number"
@@ -185,7 +309,7 @@ const TalentCalculator = () => {
                         />
                       </div>
                       <div>
-                        <Label htmlFor={`quality-${judge.id}`}>Quality (0-10)</Label>
+                        <Label htmlFor={`quality-${judge.id}`}>{t.quality}</Label>
                         <Input
                           id={`quality-${judge.id}`}
                           type="number"
@@ -201,7 +325,7 @@ const TalentCalculator = () => {
 
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <Label>Special Criteria</Label>
+                        <Label>{t.specialCriteria}</Label>
                         <div className="flex gap-2">
                           <Button
                             variant="outline"
@@ -246,7 +370,7 @@ const TalentCalculator = () => {
                   className="w-full border-royal-gold/30 hover:border-royal-gold"
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Judge
+                  {t.addJudge}
                 </Button>
               </CardContent>
             </Card>
@@ -256,12 +380,12 @@ const TalentCalculator = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-royal-gold">
                   <Users className="h-5 w-5" />
-                  Audience Voting
+                  {t.audienceVoting}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="voters">Number of Voters</Label>
+                  <Label htmlFor="voters">{t.numberOfVoters}</Label>
                   <Input
                     id="voters"
                     type="number"
@@ -272,7 +396,7 @@ const TalentCalculator = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="points">Total Audience Points</Label>
+                  <Label htmlFor="points">{t.totalAudiencePoints}</Label>
                   <Input
                     id="points"
                     type="number"
@@ -283,7 +407,7 @@ const TalentCalculator = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="constant">Control Constant (M)</Label>
+                  <Label htmlFor="constant">{t.controlConstant}</Label>
                   <Input
                     id="constant"
                     type="number"
@@ -301,7 +425,7 @@ const TalentCalculator = () => {
               className="w-full bg-gradient-royal hover:opacity-90 text-primary-foreground font-semibold py-6 text-lg shadow-royal"
             >
               <Trophy className="h-5 w-5 mr-2" />
-              Calculate Result
+              {t.calculateResult}
             </Button>
           </div>
 
@@ -311,14 +435,14 @@ const TalentCalculator = () => {
               <Card className="border-royal-gold/30 bg-gradient-to-br from-card/80 to-royal-gold/5 backdrop-blur-sm">
                 <CardHeader>
                   <CardTitle className="text-center text-royal-gold text-2xl">
-                    Final Results
+                    {t.finalResults}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="text-center space-y-4">
                   <div className="text-6xl font-bold bg-gradient-royal bg-clip-text text-transparent">
                     {result.finalScore.toFixed(2)}
                   </div>
-                  <p className="text-muted-foreground">Final Score</p>
+                  <p className="text-muted-foreground">{t.finalScore}</p>
                   
                   <Separator className="bg-royal-gold/20" />
                   
@@ -327,13 +451,13 @@ const TalentCalculator = () => {
                       <div className="text-2xl font-bold text-royal-gold-light">
                         {result.judgesAverage.toFixed(2)}
                       </div>
-                      <p className="text-muted-foreground">Judges Average</p>
+                      <p className="text-muted-foreground">{t.judgesAverage}</p>
                     </div>
                     <div>
                       <div className="text-2xl font-bold text-royal-gold-light">
                         {result.audienceAverage.toFixed(2)}
                       </div>
-                      <p className="text-muted-foreground">Audience Average</p>
+                      <p className="text-muted-foreground">{t.audienceAverage}</p>
                     </div>
                   </div>
                   
@@ -341,7 +465,7 @@ const TalentCalculator = () => {
                     <div className="text-xl font-bold text-accent">
                       {result.audienceEffective.toFixed(2)}
                     </div>
-                    <p className="text-muted-foreground text-sm">Audience Effective</p>
+                    <p className="text-muted-foreground text-sm">{t.audienceEffective}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -349,15 +473,15 @@ const TalentCalculator = () => {
               {showBreakdown && (
                 <Card className="border-kingdom-light bg-card/50 backdrop-blur-sm">
                   <CardHeader>
-                    <CardTitle className="text-royal-gold">Calculation Breakdown</CardTitle>
+                    <CardTitle className="text-royal-gold">{t.calculationBreakdown}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3 text-sm">
                     <div>
-                      <h4 className="font-semibold text-royal-gold-light mb-2">Judge Averages:</h4>
+                      <h4 className="font-semibold text-royal-gold-light mb-2">{t.judgeAverages}</h4>
                       {result.judgeAverages.map((avg, index) => (
                         <div key={index} className="flex justify-between">
-                          <span>Judge {index + 1}:</span>
-                          <span className="font-mono">{avg.toFixed(2)}</span>
+                          <span>{judges[index]?.name || `${t.judgeLabel} ${index + 1}`}:</span>
+                          <span className="font-mono">{avg.toFixed(2)} {judges[index]?.isHalfWeight ? '(Half)' : ''}</span>
                         </div>
                       ))}
                     </div>
@@ -365,7 +489,7 @@ const TalentCalculator = () => {
                     <Separator className="bg-royal-gold/20" />
                     
                     <div>
-                      <h4 className="font-semibold text-royal-gold-light mb-2">Formula Results:</h4>
+                      <h4 className="font-semibold text-royal-gold-light mb-2">{t.formulaResults}</h4>
                       <div className="space-y-1 font-mono text-xs">
                         <div>Judges Avg = {result.judgesAverage.toFixed(2)}</div>
                         <div>Audience Avg = {result.audienceAverage.toFixed(2)}</div>
@@ -382,6 +506,13 @@ const TalentCalculator = () => {
             </div>
           )}
         </div>
+        
+        {/* Footer */}
+        <footer className="text-center mt-12 py-6 border-t border-royal-gold/20">
+          <p className="text-muted-foreground text-sm">
+            {t.copyright}
+          </p>
+        </footer>
       </div>
     </div>
   );
