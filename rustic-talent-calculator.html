@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rustic Got Talent Calculator</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --background: 210 40% 8%;
+            --foreground: 210 40% 98%;
+            --card: 210 40% 12%;
+            --card-foreground: 210 40% 98%;
+            --popover: 210 40% 12%;
+            --popover-foreground: 210 40% 98%;
+            --primary: 210 40% 98%;
+            --primary-foreground: 210 40% 9%;
+            --secondary: 210 40% 16%;
+            --secondary-foreground: 210 40% 98%;
+            --muted: 210 40% 16%;
+            --muted-foreground: 210 40% 65%;
+            --accent: 210 40% 16%;
+            --accent-foreground: 210 40% 98%;
+            --destructive: 0 62.8% 30.6%;
+            --destructive-foreground: 210 40% 98%;
+            --border: 210 40% 18%;
+            --input: 210 40% 18%;
+            --ring: 210 40% 98%;
+            --radius: 0.5rem;
+            
+            /* Custom Kingdom Colors */
+            --royal-gold: 45 90% 60%;
+            --royal-gold-light: 45 85% 75%;
+            --kingdom-dark: 210 50% 5%;
+            --kingdom-light: 210 40% 25%;
+            --gradient-royal: linear-gradient(135deg, hsl(var(--royal-gold)), hsl(var(--royal-gold-light)));
+            --gradient-kingdom: linear-gradient(180deg, hsl(var(--kingdom-dark)), hsl(var(--background)));
+            --shadow-royal: 0 10px 30px -10px hsl(var(--royal-gold) / 0.3);
+            --shadow-glow: 0 0 40px hsl(var(--royal-gold-light) / 0.2);
+        }
+
+        html.light {
+            --background: 0 0% 100%;
+            --foreground: 210 40% 9%;
+            --card: 0 0% 100%;
+            --card-foreground: 210 40% 9%;
+            --popover: 0 0% 100%;
+            --popover-foreground: 210 40% 9%;
+            --primary: 210 40% 9%;
+            --primary-foreground: 210 40% 98%;
+            --secondary: 210 40% 96%;
+            --secondary-foreground: 210 40% 9%;
+            --muted: 210 40% 96%;
+            --muted-foreground: 210 40% 45%;
+            --accent: 210 40% 96%;
+            --accent-foreground: 210 40% 9%;
+            --destructive: 0 84.2% 60.2%;
+            --destructive-foreground: 210 40% 98%;
+            --border: 210 40% 85%;
+            --input: 210 40% 85%;
+            --ring: 210 40% 9%;
+            
+            /* Light mode kingdom colors */
+            --kingdom-dark: 210 50% 95%;
+            --kingdom-light: 210 40% 85%;
+            --gradient-kingdom: linear-gradient(180deg, hsl(var(--kingdom-dark)), hsl(var(--background)));
+        }
+
+        * {
+            border-color: hsl(var(--border));
+        }
+
+        body {
+            background: hsl(var(--background));
+            color: hsl(var(--foreground));
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+        }
+
+        .bg-gradient-kingdom {
+            background: var(--gradient-kingdom);
+        }
+
+        .bg-gradient-royal {
+            background: var(--gradient-royal);
+        }
+
+        .text-royal-gold {
+            color: hsl(var(--royal-gold));
+        }
+
+        .text-royal-gold-light {
+            color: hsl(var(--royal-gold-light));
+        }
+
+        .border-royal-gold {
+            border-color: hsl(var(--royal-gold));
+        }
+
+        .border-royal-gold\/30 {
+            border-color: hsl(var(--royal-gold) / 0.3);
+        }
+
+        .border-kingdom-light {
+            border-color: hsl(var(--kingdom-light));
+        }
+
+        .bg-card {
+            background: hsl(var(--card));
+        }
+
+        .bg-card\/50 {
+            background: hsl(var(--card) / 0.5);
+        }
+
+        .bg-muted\/30 {
+            background: hsl(var(--muted) / 0.3);
+        }
+
+        .bg-background\/80 {
+            background: hsl(var(--background) / 0.8);
+        }
+
+        .bg-destructive {
+            background: hsl(var(--destructive));
+        }
+
+        .text-destructive-foreground {
+            color: hsl(var(--destructive-foreground));
+        }
+
+        .text-muted-foreground {
+            color: hsl(var(--muted-foreground));
+        }
+
+        .text-primary-foreground {
+            color: hsl(var(--primary-foreground));
+        }
+
+        .shadow-royal {
+            box-shadow: var(--shadow-royal);
+        }
+
+        .drop-shadow-glow {
+            filter: drop-shadow(var(--shadow-glow));
+        }
+
+        .bg-clip-text {
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .transition-all {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: calc(var(--radius) - 2px);
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+            outline: none;
+        }
+
+        .btn-primary {
+            background: var(--gradient-royal);
+            color: hsl(var(--primary-foreground));
+            padding: 0.5rem 1rem;
+            box-shadow: var(--shadow-royal);
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid hsl(var(--border));
+            color: hsl(var(--foreground));
+            padding: 0.5rem 1rem;
+        }
+
+        .btn-outline:hover {
+            background: hsl(var(--accent));
+        }
+
+        .btn-destructive {
+            background: hsl(var(--destructive));
+            color: hsl(var(--destructive-foreground));
+            padding: 0.5rem 1rem;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: hsl(var(--foreground));
+            padding: 0.5rem 1rem;
+        }
+
+        .btn-ghost:hover {
+            background: hsl(var(--accent));
+        }
+
+        .btn-sm {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+        }
+
+        .input {
+            display: flex;
+            height: 2.5rem;
+            width: 100%;
+            border-radius: calc(var(--radius) - 2px);
+            border: 1px solid hsl(var(--border));
+            background: hsl(var(--background));
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            color: hsl(var(--foreground));
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .input:focus {
+            outline: 2px solid hsl(var(--ring));
+            outline-offset: 2px;
+        }
+
+        .card {
+            border-radius: var(--radius);
+            border: 1px solid hsl(var(--border));
+            background: hsl(var(--card));
+            color: hsl(var(--card-foreground));
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        }
+
+        .switch {
+            position: relative;
+            display: inline-flex;
+            width: 2.75rem;
+            height: 1.5rem;
+            cursor: pointer;
+        }
+
+        .switch input {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        .switch-track {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 9999px;
+            background: hsl(var(--input));
+            transition: background-color 0.2s;
+        }
+
+        .switch input:checked + .switch-track {
+            background: hsl(var(--primary));
+        }
+
+        .switch-thumb {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 1.25rem;
+            height: 1.25rem;
+            border-radius: 50%;
+            background: hsl(var(--background));
+            transition: transform 0.2s;
+            pointer-events: none;
+        }
+
+        .switch input:checked + .switch-track .switch-thumb {
+            transform: translateX(1.25rem);
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip-content {
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: hsl(var(--popover));
+            color: hsl(var(--popover-foreground));
+            padding: 0.5rem;
+            border-radius: calc(var(--radius) - 2px);
+            font-size: 0.75rem;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+            z-index: 50;
+            border: 1px solid hsl(var(--border));
+        }
+
+        .tooltip:hover .tooltip-content {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .rtl {
+            direction: rtl;
+        }
+
+        .ltr {
+            direction: ltr;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const TalentCalculator = () => {
+            const [judges, setJudges] = useState([
+                { id: 1, name: 'Judge 1', creativity: '', quality: '', specialCriteria: [''], isHalfWeight: false, isExcluded: false }
+            ]);
+            const [isArabic, setIsArabic] = useState(false);
+            const [isDarkMode, setIsDarkMode] = useState(true);
+            const [audienceVoters, setAudienceVoters] = useState('');
+            const [audiencePoints, setAudiencePoints] = useState('');
+            const [audienceHalfWeight, setAudienceHalfWeight] = useState(false);
+            const [controlConstant, setControlConstant] = useState('20');
+            const [result, setResult] = useState(null);
+            const [showBreakdown, setShowBreakdown] = useState(false);
+            const [showTransparency, setShowTransparency] = useState(false);
+
+            // Translations
+            const translations = {
+                en: {
+                    title: "Rustic Got Talent Calculator",
+                    withRegards: "With regards of COT",
+                    judges: "Judges",
+                    judgeLabel: "Judge",
+                    creativity: "Creativity (0-10)",
+                    quality: "Quality (0-10)",
+                    specialCriteria: "Special Criteria",
+                    addJudge: "Add Judge",
+                    addCriteria: "Add Criteria",
+                    removeCriteria: "Remove Criteria",
+                    halfImpact: "Half Impact",
+                    fullImpact: "Full Impact",
+                    audienceVoting: "Audience Voting",
+                    numberOfVoters: "Number of Voters",
+                    totalAudiencePoints: "Total Audience Points",
+                    controlConstant: "Control Constant (M)",
+                    calculateResult: "Calculate Result",
+                    finalResults: "Final Results",
+                    finalScore: "Final Score",
+                    judgesAverage: "Judges Average",
+                    audienceAverage: "Audience Average",
+                    audienceEffective: "Audience Effective",
+                    calculationBreakdown: "Calculation Breakdown",
+                    judgeAverages: "Judge Averages:",
+                    formulaResults: "Formula Results:",
+                    biasDetection: "Bias Detection",
+                    excludeJudge: "Exclude Judge",
+                    includeJudge: "Include Judge",
+                    biasTooltip: "Z-score:",
+                    exploreLogic: "Explore the full calculation logic behind Rustic Got Talent",
+                    transparencyTitle: "Calculation Logic & Formulas",
+                    backToCalculator: "Back to Calculator",
+                    copyright: "© for Rustic Kingdom 🗝️ | developer: Adham"
+                },
+                ar: {
+                    title: "حاسبة مواهب راستيك",
+                    withRegards: "مع تحيات فيلق المواهب",
+                    judges: "القضاة",
+                    judgeLabel: "القاضي",
+                    creativity: "الإبداع (0-10)",
+                    quality: "الجودة (0-10)",
+                    specialCriteria: "المعايير الخاصة",
+                    addJudge: "إضافة قاضي",
+                    addCriteria: "إضافة معيار",
+                    removeCriteria: "إزالة معيار",
+                    halfImpact: "نصف التأثير",
+                    fullImpact: "التأثير الكامل",
+                    audienceVoting: "تصويت الجمهور",
+                    numberOfVoters: "عدد المصوتين",
+                    totalAudiencePoints: "إجمالي نقاط الجمهور",
+                    controlConstant: "ثابت التحكم (M)",
+                    calculateResult: "احسب النتيجة",
+                    finalResults: "النتائج النهائية",
+                    finalScore: "النتيجة النهائية",
+                    judgesAverage: "متوسط القضاة",
+                    audienceAverage: "متوسط الجمهور",
+                    audienceEffective: "الجمهور الفعال",
+                    calculationBreakdown: "تفصيل الحساب",
+                    judgeAverages: "متوسط القضاة:",
+                    formulaResults: "نتائج الصيغة:",
+                    biasDetection: "كشف التحيز",
+                    excludeJudge: "استبعاد القاضي",
+                    includeJudge: "تضمين القاضي",
+                    biasTooltip: "نقاط Z:",
+                    exploreLogic: "استكشاف منطق الحساب الكامل وراء مواهب راستيك",
+                    transparencyTitle: "منطق الحساب والصيغ",
+                    backToCalculator: "العودة للحاسبة",
+                    copyright: "© مملكة راستيك 🗝️ | المطور: أدهم"
+                }
+            };
+
+            const t = translations[isArabic ? 'ar' : 'en'];
+
+            useEffect(() => {
+                if (isDarkMode) {
+                    document.documentElement.classList.remove('light');
+                } else {
+                    document.documentElement.classList.add('light');
+                }
+            }, [isDarkMode]);
+
+            const addJudge = () => {
+                const newJudge = {
+                    id: Date.now(),
+                    name: `${t.judgeLabel} ${judges.length + 1}`,
+                    creativity: '',
+                    quality: '',
+                    specialCriteria: [''],
+                    isHalfWeight: false,
+                    isExcluded: false
+                };
+                setJudges([...judges, newJudge]);
+            };
+
+            const removeJudge = (id) => {
+                if (judges.length > 1) {
+                    setJudges(judges.filter(judge => judge.id !== id));
+                }
+            };
+
+            const updateJudge = (id, field, value) => {
+                setJudges(judges.map(judge => 
+                    judge.id === id ? { ...judge, [field]: value } : judge
+                ));
+            };
+
+            const addSpecialCriteria = (judgeId) => {
+                setJudges(judges.map(judge => 
+                    judge.id === judgeId 
+                        ? { ...judge, specialCriteria: [...judge.specialCriteria, ''] }
+                        : judge
+                ));
+            };
+
+            const removeSpecialCriteria = (judgeId, index) => {
+                setJudges(judges.map(judge => 
+                    judge.id === judgeId 
+                        ? { ...judge, specialCriteria: judge.specialCriteria.filter((_, i) => i !== index) }
+                        : judge
+                ));
+            };
+
+            const updateSpecialCriteria = (judgeId, index, value) => {
+                setJudges(judges.map(judge => 
+                    judge.id === judgeId 
+                        ? { 
+                            ...judge, 
+                            specialCriteria: judge.specialCriteria.map((criteria, i) => 
+                                i === index ? value : criteria
+                            )
+                        }
+                        : judge
+                ));
+            };
+
+            const calculateBiasData = (judgeAverages) => {
+                const activeJudges = judges.filter(judge => !judge.isExcluded);
+                const activeAverages = judgeAverages.filter((_, index) => !judges[index].isExcluded);
+                
+                if (activeAverages.length === 0) return [];
+                
+                const mean = activeAverages.reduce((acc, avg) => acc + avg, 0) / activeAverages.length;
+                const variance = activeAverages.reduce((acc, avg) => acc + Math.pow(avg - mean, 2), 0) / activeAverages.length;
+                const stdDev = Math.sqrt(variance);
+                
+                return judgeAverages.map((avg, index) => {
+                    if (judges[index].isExcluded) {
+                        return { zScore: 0, flag: 'green', emoji: '🟢' };
+                    }
+                    
+                    const zScore = stdDev === 0 ? 0 : (avg - mean) / stdDev;
+                    const absZ = Math.abs(zScore);
+                    
+                    let flag = 'green';
+                    let emoji = '🟢';
+                    
+                    if (absZ > 2) {
+                        flag = 'red';
+                        emoji = '🔴';
+                    } else if (absZ > 1) {
+                        flag = 'yellow';
+                        emoji = '🟡';
+                    }
+                    
+                    return { zScore, flag, emoji };
+                });
+            };
+
+            const calculateResult = () => {
+                // Reset result to force recalculation
+                setResult(null);
+                setShowBreakdown(false);
+                
+                // Filter out excluded judges
+                const activeJudges = judges.filter(judge => !judge.isExcluded);
+                
+                if (activeJudges.length === 0) return;
+
+                // Calculate special criteria averages for each judge
+                const specialCriteriaAverages = judges.map(judge => {
+                    const validCriteria = judge.specialCriteria.filter(c => c !== '' && !isNaN(parseFloat(c)));
+                    if (validCriteria.length === 0) return 0;
+                    const sum = validCriteria.reduce((acc, criteria) => acc + parseFloat(criteria), 0);
+                    return sum / validCriteria.length;
+                });
+
+                // Calculate judge averages (including excluded judges for bias calculation)
+                const judgeAverages = judges.map((judge, index) => {
+                    const creativity = parseFloat(judge.creativity) || 0;
+                    const quality = parseFloat(judge.quality) || 0;
+                    const average = (creativity + quality + specialCriteriaAverages[index]) / 3;
+                    return judge.isHalfWeight ? average / 2 : average;
+                });
+
+                // Calculate bias data
+                const biasData = calculateBiasData(judgeAverages);
+
+                // Calculate overall judges average (only active judges)
+                const activeAverages = judgeAverages.filter((_, index) => !judges[index].isExcluded);
+                const judgesAverage = activeAverages.reduce((acc, avg) => acc + avg, 0) / activeAverages.length;
+
+                // Calculate audience average
+                const votersCount = parseInt(audienceVoters) || 0;
+                const totalPoints = parseInt(audiencePoints) || 0;
+                let audienceAverage = votersCount > 0 ? totalPoints / votersCount : 0;
+                
+                // Apply half weight to audience if enabled
+                if (audienceHalfWeight) {
+                    audienceAverage = audienceAverage / 2;
+                }
+
+                // Calculate effective M value
+                const M = Math.max(activeJudges.length * 10, parseInt(controlConstant) || 20);
+
+                // Calculate audience effective
+                const audienceEffective = votersCount > 0 
+                    ? (votersCount * audienceAverage + M * judgesAverage) / (votersCount + M)
+                    : judgesAverage;
+
+                // Calculate final score
+                const finalScore = (judgesAverage * 0.75) + (audienceEffective * 0.25);
+
+                setResult({
+                    finalScore,
+                    judgesAverage,
+                    audienceAverage,
+                    audienceEffective,
+                    judgeAverages,
+                    specialCriteriaAverages,
+                    biasData
+                });
+                setShowBreakdown(true);
+            };
+
+            const Icon = ({ name, className = "h-4 w-4" }) => {
+                const icons = {
+                    plus: (
+                        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                    ),
+                    minus: (
+                        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                        </svg>
+                    ),
+                    trophy: (
+                        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    ),
+                    users: (
+                        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                        </svg>
+                    ),
+                    gavel: (
+                        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                        </svg>
+                    ),
+                    sun: (
+                        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                    ),
+                    moon: (
+                        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                        </svg>
+                    ),
+                    languages: (
+                        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                        </svg>
+                    ),
+                    book: (
+                        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                    )
+                };
+                return icons[name] || null;
+            };
+
+            const Switch = ({ checked, onCheckedChange, className = "" }) => (
+                <label className={`switch ${className}`}>
+                    <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => onCheckedChange(e.target.checked)}
+                    />
+                    <div className="switch-track">
+                        <div className="switch-thumb"></div>
+                    </div>
+                </label>
+            );
+
+            const Tooltip = ({ children, content }) => (
+                <div className="tooltip">
+                    {children}
+                    <div className="tooltip-content">{content}</div>
+                </div>
+            );
+
+            return (
+                <div className={`min-h-screen bg-gradient-kingdom py-8 px-4 ${isArabic ? 'rtl' : 'ltr'}`} dir={isArabic ? 'rtl' : 'ltr'}>
+                    <div className="max-w-4xl mx-auto">
+                        {/* Header with Controls */}
+                        <div className="text-center mb-8">
+                            {/* Language and Theme Controls */}
+                            <div className="flex justify-between items-center mb-6">
+                                <div className="flex gap-2">
+                                    <button
+                                        className="btn btn-outline btn-sm border-royal-gold/30 hover:border-royal-gold"
+                                        onClick={() => setIsArabic(!isArabic)}
+                                    >
+                                        <Icon name="languages" className="h-4 w-4 mr-2" />
+                                        {isArabic ? 'EN' : 'عربي'}
+                                    </button>
+                                    <button
+                                        className="btn btn-outline btn-sm border-royal-gold/30 hover:border-royal-gold"
+                                        onClick={() => setIsDarkMode(!isDarkMode)}
+                                    >
+                                        <Icon name={isDarkMode ? 'sun' : 'moon'} />
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div className="flex justify-center mb-4">
+                                <img 
+                                    src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjQ1IiBzdHJva2U9IiNGRkQ3MDAiIHN0cm9rZS13aWR0aD0iMyIgZmlsbD0ibm9uZSIvPgo8cGF0aCBkPSJNMzAgMzBMNzAgNzBNNzAgMzBMMzAgNzAiIHN0cm9rZT0iI0ZGRDcwMCIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPHN2Zz4K" 
+                                    alt="Rustic Got Talent Logo" 
+                                    className="h-24 w-auto drop-shadow-glow"
+                                />
+                            </div>
+                            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-royal bg-clip-text text-transparent mb-2">
+                                {t.title}
+                            </h1>
+                            <p className="text-royal-gold-light text-base italic">
+                                {t.withRegards}
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            {/* Input Section */}
+                            <div className="space-y-6">
+                                {/* Judges Section */}
+                                <div className="card border-kingdom-light bg-card/50 backdrop-blur-sm">
+                                    <div className="p-6 pb-4">
+                                        <h3 className="text-lg font-semibold text-royal-gold flex items-center gap-2">
+                                            <Icon name="gavel" className="h-5 w-5" />
+                                            {t.judges} ({judges.length})
+                                        </h3>
+                                    </div>
+                                    <div className="px-6 pb-6 space-y-4">
+                                        {judges.map((judge, judgeIndex) => (
+                                            <div key={judge.id} className="space-y-3 p-4 bg-muted/30 rounded-lg">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex-1">
+                                                        <input
+                                                            type="text"
+                                                            value={judge.name}
+                                                            onChange={(e) => updateJudge(judge.id, 'name', e.target.value)}
+                                                            className="input bg-background/80 font-semibold text-royal-gold-light"
+                                                            placeholder={`${t.judgeLabel} ${judgeIndex + 1}`}
+                                                        />
+                                                    </div>
+                                                    <div className="flex items-center gap-2 ml-4">
+                                                        <div className="flex items-center gap-2">
+                                                            <label className="text-xs">
+                                                                {judge.isHalfWeight ? t.halfImpact : t.fullImpact}
+                                                            </label>
+                                                            <Switch
+                                                                checked={judge.isHalfWeight}
+                                                                onCheckedChange={(checked) => updateJudge(judge.id, 'isHalfWeight', checked)}
+                                                            />
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                className={`btn btn-sm ${judge.isExcluded ? "bg-destructive text-destructive-foreground" : "btn-outline"}`}
+                                                                onClick={() => updateJudge(judge.id, 'isExcluded', !judge.isExcluded)}
+                                                            >
+                                                                {judge.isExcluded ? t.includeJudge : t.excludeJudge}
+                                                            </button>
+                                                        </div>
+                                                        {judges.length > 1 && (
+                                                            <button
+                                                                className="btn btn-destructive btn-sm"
+                                                                onClick={() => removeJudge(judge.id)}
+                                                            >
+                                                                <Icon name="minus" />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <label className="text-sm font-medium">{t.creativity}</label>
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            max="10"
+                                                            step="0.1"
+                                                            value={judge.creativity}
+                                                            onChange={(e) => updateJudge(judge.id, 'creativity', e.target.value)}
+                                                            className="input bg-background/80"
+                                                            placeholder="0"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-sm font-medium">{t.quality}</label>
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            max="10"
+                                                            step="0.1"
+                                                            value={judge.quality}
+                                                            onChange={(e) => updateJudge(judge.id, 'quality', e.target.value)}
+                                                            className="input bg-background/80"
+                                                            placeholder="0"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <label className="text-sm font-medium">{t.specialCriteria}</label>
+                                                        <div className="flex gap-2">
+                                                            <button
+                                                                className="btn btn-outline btn-sm"
+                                                                onClick={() => addSpecialCriteria(judge.id)}
+                                                            >
+                                                                <Icon name="plus" />
+                                                            </button>
+                                                            {judge.specialCriteria.length > 1 && (
+                                                                <button
+                                                                    className="btn btn-outline btn-sm"
+                                                                    onClick={() => removeSpecialCriteria(judge.id, judge.specialCriteria.length - 1)}
+                                                                >
+                                                                    <Icon name="minus" />
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        {judge.specialCriteria.map((criteria, index) => (
+                                                            <input
+                                                                key={index}
+                                                                type="number"
+                                                                min="0"
+                                                                max="10"
+                                                                step="0.1"
+                                                                value={criteria}
+                                                                onChange={(e) => updateSpecialCriteria(judge.id, index, e.target.value)}
+                                                                placeholder={`Criteria ${index + 1}`}
+                                                                className="input bg-background/80"
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        
+                                        <button
+                                            onClick={addJudge}
+                                            className="btn btn-outline w-full border-royal-gold/30 hover:border-royal-gold"
+                                        >
+                                            <Icon name="plus" className="h-4 w-4 mr-2" />
+                                            {t.addJudge}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Audience Section */}
+                                <div className="card border-kingdom-light bg-card/50 backdrop-blur-sm">
+                                    <div className="p-6 pb-4">
+                                        <h3 className="text-lg font-semibold text-royal-gold flex items-center gap-2">
+                                            <Icon name="users" className="h-5 w-5" />
+                                            {t.audienceVoting}
+                                        </h3>
+                                    </div>
+                                    <div className="px-6 pb-6 space-y-4">
+                                        <div>
+                                            <label className="text-sm font-medium">{t.numberOfVoters}</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                value={audienceVoters}
+                                                onChange={(e) => setAudienceVoters(e.target.value)}
+                                                className="input bg-background/80"
+                                                placeholder="0"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-sm font-medium">{t.totalAudiencePoints}</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                value={audiencePoints}
+                                                onChange={(e) => setAudiencePoints(e.target.value)}
+                                                className="input bg-background/80"
+                                                placeholder="0"
+                                            />
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <label className="text-sm">
+                                                {audienceHalfWeight ? t.halfImpact : t.fullImpact}
+                                            </label>
+                                            <Switch
+                                                checked={audienceHalfWeight}
+                                                onCheckedChange={setAudienceHalfWeight}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-sm font-medium">{t.controlConstant}</label>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                value={controlConstant}
+                                                onChange={(e) => setControlConstant(e.target.value)}
+                                                className="input bg-background/80"
+                                                placeholder="20"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={calculateResult}
+                                    className="btn btn-primary w-full py-6 text-lg shadow-royal"
+                                >
+                                    <Icon name="trophy" className="h-5 w-5 mr-2" />
+                                    {t.calculateResult}
+                                </button>
+                            </div>
+
+                            {/* Results Section */}
+                            {result && (
+                                <div className="space-y-6">
+                                    <div className="card border-royal-gold/30 bg-gradient-to-br from-card/80 to-royal-gold/5 backdrop-blur-sm">
+                                        <div className="p-6 pb-4">
+                                            <h3 className="text-center text-royal-gold text-2xl font-semibold">
+                                                {t.finalResults}
+                                            </h3>
+                                        </div>
+                                        <div className="px-6 pb-6 text-center space-y-4">
+                                            <div className="text-6xl font-bold bg-gradient-royal bg-clip-text text-transparent">
+                                                {result.finalScore.toFixed(2)}
+                                            </div>
+                                            <p className="text-muted-foreground">{t.finalScore}</p>
+                                            
+                                            <div className="h-px bg-royal-gold/20 my-4"></div>
+                                            
+                                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                                <div>
+                                                    <div className="text-2xl font-bold text-royal-gold-light">
+                                                        {result.judgesAverage.toFixed(2)}
+                                                    </div>
+                                                    <p className="text-muted-foreground">{t.judgesAverage}</p>
+                                                </div>
+                                                <div>
+                                                    <div className="text-2xl font-bold text-royal-gold-light">
+                                                        {result.audienceAverage.toFixed(2)}
+                                                    </div>
+                                                    <p className="text-muted-foreground">{t.audienceAverage}</p>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="text-center">
+                                                <div className="text-xl font-bold text-royal-gold-light">
+                                                    {result.audienceEffective.toFixed(2)}
+                                                </div>
+                                                <p className="text-muted-foreground text-sm">{t.audienceEffective}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {showBreakdown && (
+                                        <div className="card border-kingdom-light bg-card/50 backdrop-blur-sm">
+                                            <div className="p-6 pb-4">
+                                                <h3 className="text-royal-gold font-semibold">{t.calculationBreakdown}</h3>
+                                            </div>
+                                            <div className="px-6 pb-6 space-y-3 text-sm">
+                                                <div>
+                                                    <h4 className="font-semibold text-royal-gold-light mb-2">{t.judgeAverages}</h4>
+                                                    {result.judgeAverages.map((avg, index) => (
+                                                        <div key={index} className="flex justify-between items-center">
+                                                            <span className="flex items-center gap-2">
+                                                                {judges[index]?.name || `${t.judgeLabel} ${index + 1}`}:
+                                                                {result.biasData[index] && (
+                                                                    <Tooltip content={`${t.biasTooltip} ${result.biasData[index].zScore.toFixed(2)}`}>
+                                                                        <span>{result.biasData[index].emoji}</span>
+                                                                    </Tooltip>
+                                                                )}
+                                                            </span>
+                                                            <span className="font-mono">
+                                                                {avg.toFixed(2)} 
+                                                                {judges[index]?.isHalfWeight ? ' (Half)' : ''} 
+                                                                {judges[index]?.isExcluded ? ' (Excluded)' : ''}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                
+                                                <div className="h-px bg-royal-gold/20"></div>
+                                                
+                                                <div>
+                                                    <h4 className="font-semibold text-royal-gold-light mb-2">{t.formulaResults}</h4>
+                                                    <div className="space-y-1 font-mono text-xs">
+                                                        <div>Active Judges = {judges.filter(j => !j.isExcluded).length}</div>
+                                                        <div>Judges Avg = {result.judgesAverage.toFixed(2)}</div>
+                                                        <div>Audience Avg = {result.audienceAverage.toFixed(2)} {audienceHalfWeight ? ' (Half)' : ''}</div>
+                                                        <div>M = {Math.max(judges.filter(j => !j.isExcluded).length * 10, parseInt(controlConstant) || 20)}</div>
+                                                        <div>Audience Effective = {result.audienceEffective.toFixed(2)}</div>
+                                                        <div className="text-royal-gold">
+                                                            Final = ({result.judgesAverage.toFixed(2)} × 0.75) + ({result.audienceEffective.toFixed(2)} × 0.25) = {result.finalScore.toFixed(2)}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                        
+                        {/* Transparency Link */}
+                        <div className="text-center mt-8">
+                            <button
+                                className="btn btn-ghost text-royal-gold hover:text-royal-gold-light underline"
+                                onClick={() => setShowTransparency(true)}
+                            >
+                                <Icon name="book" className="h-4 w-4 mr-2" />
+                                {t.exploreLogic}
+                            </button>
+                        </div>
+
+                        {/* Transparency Modal/Page */}
+                        {showTransparency && (
+                            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+                                <div className="bg-card max-w-4xl w-full max-h-[90vh] overflow-y-auto rounded-lg border border-royal-gold/30">
+                                    <div className="p-6">
+                                        <div className="flex justify-between items-center mb-6">
+                                            <h2 className="text-2xl font-bold text-royal-gold">{t.transparencyTitle}</h2>
+                                            <button
+                                                className="btn btn-ghost btn-sm"
+                                                onClick={() => setShowTransparency(false)}
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                        
+                                        <div className="space-y-6 text-sm">
+                                            <div>
+                                                <h3 className="font-semibold text-royal-gold-light mb-2">
+                                                    {isArabic ? "1. متوسط المعايير الخاصة (لكل قاضي)" : "1. Special Criteria Average (per judge)"}
+                                                </h3>
+                                                <p className="font-mono bg-muted/30 p-2 rounded">
+                                                    Special_Criteria_Avg = (Criterion₁ + Criterion₂ + ... + Criterionₙ) ÷ n
+                                                </p>
+                                            </div>
+                                            
+                                            <div>
+                                                <h3 className="font-semibold text-royal-gold-light mb-2">
+                                                    {isArabic ? "2. متوسط القاضي" : "2. Judge Average"}
+                                                </h3>
+                                                <p className="font-mono bg-muted/30 p-2 rounded">
+                                                    Judge_Avg = (Creativity + Quality + Special_Criteria_Avg) ÷ 3
+                                                </p>
+                                                <p className="text-xs text-muted-foreground mt-1">
+                                                    {isArabic ? "إذا كان نصف التأثير: Judge_Avg = Judge_Avg ÷ 2" : "If half impact: Judge_Avg = Judge_Avg ÷ 2"}
+                                                </p>
+                                            </div>
+                                            
+                                            <div>
+                                                <h3 className="font-semibold text-royal-gold-light mb-2">
+                                                    {isArabic ? "3. متوسط القضاة العام" : "3. Overall Judges Average"}
+                                                </h3>
+                                                <p className="font-mono bg-muted/30 p-2 rounded">
+                                                    Judges_Avg = (Judge₁_Avg + Judge₂_Avg + ... + Judgeₙ_Avg) ÷ n
+                                                </p>
+                                                <p className="text-xs text-muted-foreground mt-1">
+                                                    {isArabic ? "فقط القضاة النشطين (غير المستبعدين) يتم تضمينهم" : "Only active (non-excluded) judges are included"}
+                                                </p>
+                                            </div>
+                                            
+                                            <div>
+                                                <h3 className="font-semibold text-royal-gold-light mb-2">
+                                                    {isArabic ? "4. متوسط الجمهور" : "4. Audience Average"}
+                                                </h3>
+                                                <p className="font-mono bg-muted/30 p-2 rounded">
+                                                    Audience_Avg = Total_Audience_Points ÷ Number_of_Voters
+                                                </p>
+                                                <p className="text-xs text-muted-foreground mt-1">
+                                                    {isArabic ? "إذا كان نصف التأثير: Audience_Avg = Audience_Avg ÷ 2" : "If half impact: Audience_Avg = Audience_Avg ÷ 2"}
+                                                </p>
+                                            </div>
+                                            
+                                            <div>
+                                                <h3 className="font-semibold text-royal-gold-light mb-2">
+                                                    {isArabic ? "5. الجمهور الفعال (عوائد متناقصة)" : "5. Audience Effective (diminishing returns)"}
+                                                </h3>
+                                                <p className="font-mono bg-muted/30 p-2 rounded">
+                                                    Audience_Effective = (N × Audience_Avg + M × Judges_Avg) ÷ (N + M)
+                                                </p>
+                                                <p className="text-xs text-muted-foreground mt-1">
+                                                    {isArabic ? "حيث: N = عدد المصوتين، M = max(القضاة_النشطين × 10، ثابت_التحكم)" : "Where: N = Number of voters, M = max(Active_Judges × 10, Control_Constant)"}
+                                                </p>
+                                            </div>
+                                            
+                                            <div>
+                                                <h3 className="font-semibold text-royal-gold-light mb-2">
+                                                    {isArabic ? "6. النتيجة النهائية" : "6. Final Score"}
+                                                </h3>
+                                                <p className="font-mono bg-muted/30 p-2 rounded">
+                                                    Final_Score = (Judges_Avg × 0.75) + (Audience_Effective × 0.25)
+                                                </p>
+                                            </div>
+                                            
+                                            <div>
+                                                <h3 className="font-semibold text-royal-gold-light mb-2">
+                                                    {isArabic ? "7. اكتشاف التحيز (طريقة Z-Score)" : "7. Bias Detection (Z-Score Method)"}
+                                                </h3>
+                                                <div className="space-y-2">
+                                                    <p className="font-mono bg-muted/30 p-2 rounded">
+                                                        Mean = Judges_Avg
+                                                    </p>
+                                                    <p className="font-mono bg-muted/30 p-2 rounded">
+                                                        StdDev = √(Σ(Judge_Avgᵢ - Mean)² ÷ n)
+                                                    </p>
+                                                    <p className="font-mono bg-muted/30 p-2 rounded">
+                                                        Z_Score = (Judge_Avg - Mean) ÷ StdDev
+                                                    </p>
+                                                    <div className="text-xs space-y-1">
+                                                        <p>🟢 {isArabic ? "أخضر: |Z| ≤ 1 (عادل/متسق)" : "Green: |Z| ≤ 1 (fair/consistent)"}</p>
+                                                        <p>🟡 {isArabic ? "أصفر: 1 < |Z| ≤ 2 (مشبوه/حدي)" : "Yellow: 1 < |Z| ≤ 2 (suspicious/borderline)"}</p>
+                                                        <p>🔴 {isArabic ? "أحمر: |Z| > 2 (متحيز/شاذ)" : "Red: |Z| > 2 (biased/outlier)"}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="mt-6 pt-4 border-t border-royal-gold/20">
+                                            <button
+                                                onClick={() => setShowTransparency(false)}
+                                                className="btn btn-primary w-full"
+                                            >
+                                                {t.backToCalculator}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        
+                        {/* Footer */}
+                        <footer className="text-center mt-12 py-6 border-t border-royal-gold/20">
+                            <p className="text-muted-foreground text-sm">
+                                {t.copyright}
+                            </p>
+                        </footer>
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<TalentCalculator />, document.getElementById('root'));
+    </script>
+</body>
+</html>
