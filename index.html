@@ -334,14 +334,14 @@
 
         const TalentCalculator = () => {
             const [judges, setJudges] = useState([
-                { id: 1, name: 'Judge 1', creativity: '', quality: '', specialCriteria: [''], isHalfWeight: false, isExcluded: false }
+                { id: 1, name: '', creativity: '', quality: '', specialCriteria: [''], isHalfWeight: false, isExcluded: false }
             ]);
             const [isArabic, setIsArabic] = useState(false);
             const [isDarkMode, setIsDarkMode] = useState(true);
-            const [audienceVoters, setAudienceVoters] = useState('');
-            const [audiencePoints, setAudiencePoints] = useState('');
-            const [audienceHalfWeight, setAudienceHalfWeight] = useState(false);
-            const [controlConstant, setControlConstant] = useState('20');
+            const [audienceMembers, setAudienceMembers] = useState([
+                { id: 1, voters: '', points: '', isHalfWeight: false }
+            ]);
+            const [controlConstant, setControlConstant] = useState('');
             const [result, setResult] = useState(null);
             const [showBreakdown, setShowBreakdown] = useState(false);
             const [showTransparency, setShowTransparency] = useState(false);
@@ -381,7 +381,9 @@
                     exploreLogic: "Explore the full calculation logic behind Rustic Got Talent",
                     transparencyTitle: "Calculation Logic & Formulas",
                     backToCalculator: "Back to Calculator",
-                    copyright: "© for Rustic Kingdom 🗝️ | developer: Adham"
+                    copyright: "© for Rustic Kingdom 🗝️ | developer: Adham",
+                    addAudience: "Add Audience Member",
+                    audienceMember: "Audience Member"
                 },
                 ar: {
                     title: "حاسبة مواهب راستيك",
@@ -416,7 +418,9 @@
                     exploreLogic: "استكشاف منطق الحساب الكامل وراء مواهب راستيك",
                     transparencyTitle: "منطق الحساب والصيغ",
                     backToCalculator: "العودة للحاسبة",
-                    copyright: "© مملكة راستيك 🗝️ | المطور: أدهم"
+                    copyright: "© مملكة راستيك 🗝️ | المطور: أدهم",
+                    addAudience: "إضافة عضو جمهور",
+                    audienceMember: "عضو الجمهور"
                 }
             };
 
@@ -433,7 +437,7 @@
             const addJudge = () => {
                 const newJudge = {
                     id: Date.now(),
-                    name: `${t.judgeLabel} ${judges.length + 1}`,
+                    name: '',
                     creativity: '',
                     quality: '',
                     specialCriteria: [''],
@@ -484,6 +488,28 @@
                 ));
             };
 
+            const addAudienceMember = () => {
+                const newMember = {
+                    id: Date.now(),
+                    voters: '',
+                    points: '',
+                    isHalfWeight: false
+                };
+                setAudienceMembers([...audienceMembers, newMember]);
+            };
+
+            const removeAudienceMember = (id) => {
+                if (audienceMembers.length > 1) {
+                    setAudienceMembers(audienceMembers.filter(member => member.id !== id));
+                }
+            };
+
+            const updateAudienceMember = (id, field, value) => {
+                setAudienceMembers(audienceMembers.map(member => 
+                    member.id === id ? { ...member, [field]: value } : member
+                ));
+            };
+
             const calculateBiasData = (judgeAverages) => {
                 const activeJudges = judges.filter(judge => !judge.isExcluded);
                 const activeAverages = judgeAverages.filter((_, index) => !judges[index].isExcluded);
@@ -494,12 +520,12 @@
                 const variance = activeAverages.reduce((acc, avg) => acc + Math.pow(avg - mean, 2), 0) / activeAverages.length;
                 const stdDev = Math.sqrt(variance);
                 
-                return judgeAverages.map((avg, index) => {
-                    if (judges[index].isExcluded) {
-                        return { zScore: 0, flag: 'green', emoji: '🟢' };
-                    }
-                    
-                    const zScore = stdDev === 0 ? 0 : (avg - mean) / stdDev;
+                if (stdDev === 0) {
+                    return judgeAverages.map(() => ({ zScore: 0, flag: 'green', emoji: '🟢' }));
+                }
+                
+                return judgeAverages.map((avg) => {
+                    const zScore = (avg - mean) / stdDev;
                     const absZ = Math.abs(zScore);
                     
                     let flag = 'green';
@@ -550,22 +576,28 @@
                 const activeAverages = judgeAverages.filter((_, index) => !judges[index].isExcluded);
                 const judgesAverage = activeAverages.reduce((acc, avg) => acc + avg, 0) / activeAverages.length;
 
-                // Calculate audience average
-                const votersCount = parseInt(audienceVoters) || 0;
-                const totalPoints = parseInt(audiencePoints) || 0;
-                let audienceAverage = votersCount > 0 ? totalPoints / votersCount : 0;
+                // Calculate audience data
+                let totalVoters = 0;
+                let totalPoints = 0;
                 
-                // Apply half weight to audience if enabled
-                if (audienceHalfWeight) {
-                    audienceAverage = audienceAverage / 2;
-                }
+                audienceMembers.forEach(member => {
+                    const voters = parseInt(member.voters) || 0;
+                    const points = parseInt(member.points) || 0;
+                    const avgPoints = voters > 0 ? points / voters : 0;
+                    const effectivePoints = member.isHalfWeight ? avgPoints / 2 : avgPoints;
+                    
+                    totalVoters += voters;
+                    totalPoints += voters * effectivePoints;
+                });
+
+                const audienceAverage = totalVoters > 0 ? totalPoints / totalVoters : 0;
 
                 // Calculate effective M value
                 const M = Math.max(activeJudges.length * 10, parseInt(controlConstant) || 20);
 
                 // Calculate audience effective
-                const audienceEffective = votersCount > 0 
-                    ? (votersCount * audienceAverage + M * judgesAverage) / (votersCount + M)
+                const audienceEffective = totalVoters > 0 
+                    ? (totalVoters * audienceAverage + M * judgesAverage) / (totalVoters + M)
                     : judgesAverage;
 
                 // Calculate final score
@@ -578,7 +610,8 @@
                     audienceEffective,
                     judgeAverages,
                     specialCriteriaAverages,
-                    biasData
+                    biasData,
+                    totalVoters
                 });
                 setShowBreakdown(true);
             };
@@ -605,14 +638,9 @@
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                         </svg>
                     ),
-                    gavel: (
+                    judge: (
                         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                        </svg>
-                    ),
-                    sun: (
-                        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
                     ),
                     moon: (
@@ -620,25 +648,40 @@
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                         </svg>
                     ),
-                    languages: (
+                    sun: (
                         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707" />
                         </svg>
                     ),
-                    book: (
+                    chevronUp: (
                         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                        </svg>
+                    ),
+                    chevronDown: (
+                        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                    ),
+                    x: (
+                        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    ),
+                    back: (
+                        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                         </svg>
                     )
                 };
-                return icons[name] || null;
+                return icons[name] || <div className={className}></div>;
             };
 
-            const Switch = ({ checked, onCheckedChange, className = "" }) => (
-                <label className={`switch ${className}`}>
-                    <input
-                        type="checkbox"
-                        checked={checked}
+            const Switch = ({ checked, onCheckedChange }) => (
+                <label className="switch">
+                    <input 
+                        type="checkbox" 
+                        checked={checked} 
                         onChange={(e) => onCheckedChange(e.target.checked)}
                     />
                     <div className="switch-track">
@@ -647,79 +690,152 @@
                 </label>
             );
 
-            const Tooltip = ({ children, content }) => (
-                <div className="tooltip">
-                    {children}
-                    <div className="tooltip-content">{content}</div>
+            const TransparencySection = () => (
+                <div className="min-h-screen bg-gradient-kingdom p-8">
+                    <div className="max-w-4xl mx-auto">
+                        <div className="mb-8">
+                            <button
+                                onClick={() => setShowTransparency(false)}
+                                className="btn btn-outline mb-4 border-royal-gold/30 hover:border-royal-gold"
+                            >
+                                <Icon name="back" className="h-4 w-4 mr-2" />
+                                {t.backToCalculator}
+                            </button>
+                            <h1 className="text-4xl font-bold text-royal-gold text-center mb-2">
+                                {t.transparencyTitle}
+                            </h1>
+                        </div>
+
+                        <div className="card border-royal-gold/30 bg-card/80 backdrop-blur-sm p-8 space-y-8">
+                            <div>
+                                <h2 className="text-xl font-semibold text-royal-gold mb-4">
+                                    {isArabic ? "صيغ الحساب الأساسية" : "Core Calculation Formulas"}
+                                </h2>
+                                <div className="space-y-4 font-mono text-sm bg-muted/30 p-4 rounded">
+                                    <div><strong>JudgeAvg_j</strong> = (Creativity_j + Quality_j + SpecialCriteriaAvg_j) / 3</div>
+                                    <div><strong>Judges_Avg</strong> = Σ(JudgeAvg_j) / NumberOfActiveJudges</div>
+                                    <div><strong>Audience_Avg</strong> = TotalAudiencePoints / TotalVoters</div>
+                                    <div><strong>M</strong> = max(NumberOfActiveJudges × 10, ControlConstant)</div>
+                                    <div><strong>Audience_Effective</strong> = (Voters × Audience_Avg + M × Judges_Avg) / (Voters + M)</div>
+                                    <div><strong>Final_Score</strong> = (Judges_Avg × 0.75) + (Audience_Effective × 0.25)</div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h2 className="text-xl font-semibold text-royal-gold mb-4">
+                                    {isArabic ? "كشف التحيز (طريقة Z-score)" : "Bias Detection (Z-score Method)"}
+                                </h2>
+                                <div className="space-y-4 font-mono text-sm bg-muted/30 p-4 rounded">
+                                    <div><strong>Mean</strong> = Σ(JudgeAvg_j) / NumberOfActiveJudges</div>
+                                    <div><strong>StdDev</strong> = √(Σ(JudgeAvg_j - Mean)² / NumberOfActiveJudges)</div>
+                                    <div><strong>Z_j</strong> = (JudgeAvg_j - Mean) / StdDev</div>
+                                    <div className="mt-4">
+                                        <div><span className="text-green-400">🟢</span> {isArabic ? "عادل/متسق" : "Fair/Consistent"}: |Z_j| ≤ 1</div>
+                                        <div><span className="text-yellow-400">🟡</span> {isArabic ? "مشبوه/حدي" : "Suspicious/Borderline"}: 1 &lt; |Z_j| ≤ 2</div>
+                                        <div><span className="text-red-400">🔴</span> {isArabic ? "متحيز/شاذ" : "Biased/Outlier"}: |Z_j| &gt; 2</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h2 className="text-xl font-semibold text-royal-gold mb-4">
+                                    {isArabic ? "التحكم في التأثير" : "Impact Controls"}
+                                </h2>
+                                <div className="space-y-2 bg-muted/30 p-4 rounded">
+                                    <div>{isArabic ? "• نصف التأثير للقاضي: JudgeAvg_j = OriginalAvg / 2" : "• Half Impact for Judge: JudgeAvg_j = OriginalAvg / 2"}</div>
+                                    <div>{isArabic ? "• نصف التأثير للجمهور: Audience_Avg = OriginalAvg / 2" : "• Half Impact for Audience: Audience_Avg = OriginalAvg / 2"}</div>
+                                    <div>{isArabic ? "• استبعاد القاضي: إزالة من حساب Judges_Avg" : "• Exclude Judge: Remove from Judges_Avg calculation"}</div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h2 className="text-xl font-semibold text-royal-gold mb-4">
+                                    {isArabic ? "شرح ثابت M" : "M Constant Explanation"}
+                                </h2>
+                                <div className="bg-muted/30 p-4 rounded">
+                                    <p className="text-sm">
+                                        {isArabic 
+                                            ? "ثابت M يتحكم في تأثير تصويت الجمهور. قيمة أعلى تعني تأثيراً أقل للجمهور، والعكس صحيح. القيمة الافتراضية تُحسب كـ (عدد القضاة × 10) أو الحد الأدنى المحدد."
+                                            : "The M constant controls the influence of audience voting. A higher value means less audience influence, and vice versa. The default value is calculated as (Number of Judges × 10) or the specified minimum."
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             );
 
-            return (
-                <div className={`min-h-screen bg-gradient-kingdom py-8 px-4 ${isArabic ? 'rtl' : 'ltr'}`} dir={isArabic ? 'rtl' : 'ltr'}>
-                    <div className="max-w-4xl mx-auto">
-                        {/* Header with Controls */}
-                        <div className="text-center mb-8">
-                            {/* Language and Theme Controls */}
-                            <div className="flex justify-between items-center mb-6">
-                                <div className="flex gap-2">
-                                    <button
-                                        className="btn btn-outline btn-sm border-royal-gold/30 hover:border-royal-gold"
-                                        onClick={() => setIsArabic(!isArabic)}
-                                    >
-                                        <Icon name="languages" className="h-4 w-4 mr-2" />
-                                        {isArabic ? 'EN' : 'عربي'}
-                                    </button>
-                                    <button
-                                        className="btn btn-outline btn-sm border-royal-gold/30 hover:border-royal-gold"
-                                        onClick={() => setIsDarkMode(!isDarkMode)}
-                                    >
-                                        <Icon name={isDarkMode ? 'sun' : 'moon'} />
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div className="flex justify-center mb-4">
-                                <img 
-                                    src="https://drive.google.com/file/d/1AKhyfkwBZRTDumsR-E9Xqtz15D6dZ9-S/view?usp=drivesdk" 
-                                    alt="Rustic Got Talent Logo" 
-                                    className="h-24 w-auto drop-shadow-glow"
-                                />
-                            </div>
-                            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-royal bg-clip-text text-transparent mb-2">
-                                {t.title}
-                            </h1>
-                            <p className="text-royal-gold-light text-base italic">
-                                {t.withRegards}
-                            </p>
-                        </div>
+            if (showTransparency) {
+                return <TransparencySection />;
+            }
 
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            return (
+                <div className={`min-h-screen bg-gradient-kingdom ${isArabic ? 'rtl' : 'ltr'}`}>
+                    <div className="container mx-auto px-4 py-8">
+                        <div className="space-y-8">
+                            {/* Header */}
+                            <div className="text-center space-y-4">
+                                <div className="flex justify-center mb-4">
+                                    <img 
+                                        src="https://lh3.googleusercontent.com/d/1AKhyfkwBZRTDumsR-E9Xqtz15D6dZ9-S" 
+                                        alt="Rustic Got Talent Logo" 
+                                        className="h-24 w-auto drop-shadow-glow"
+                                    />
+                                </div>
+                                
+                                <h1 className="text-4xl font-bold bg-gradient-royal bg-clip-text text-transparent">
+                                    {t.title}
+                                </h1>
+                                
+                                <p className="text-royal-gold-light text-lg">
+                                    {t.withRegards}
+                                </p>
+                            </div>
+
+                            {/* Language and Theme Controls */}
+                            <div className="flex justify-center gap-4">
+                                <button
+                                    onClick={() => setIsArabic(!isArabic)}
+                                    className="btn btn-outline border-royal-gold/30 hover:border-royal-gold"
+                                >
+                                    {isArabic ? 'English' : 'العربية'}
+                                </button>
+                                <button
+                                    onClick={() => setIsDarkMode(!isDarkMode)}
+                                    className="btn btn-outline border-royal-gold/30 hover:border-royal-gold"
+                                >
+                                    <Icon name={isDarkMode ? "sun" : "moon"} className="h-4 w-4 mr-2" />
+                                    {isDarkMode ? 'Light' : 'Dark'}
+                                </button>
+                            </div>
+
                             {/* Input Section */}
                             <div className="space-y-6">
                                 {/* Judges Section */}
                                 <div className="card border-kingdom-light bg-card/50 backdrop-blur-sm">
                                     <div className="p-6 pb-4">
                                         <h3 className="text-lg font-semibold text-royal-gold flex items-center gap-2">
-                                            <Icon name="gavel" className="h-5 w-5" />
-                                            {t.judges} ({judges.length})
+                                            <Icon name="judge" className="h-5 w-5" />
+                                            {t.judges}
                                         </h3>
                                     </div>
                                     <div className="px-6 pb-6 space-y-4">
                                         {judges.map((judge, judgeIndex) => (
-                                            <div key={judge.id} className="space-y-3 p-4 bg-muted/30 rounded-lg">
-                                                <div className="flex items-center justify-between">
+                                            <div key={judge.id} className={`card border-royal-gold/30 bg-background/80 backdrop-blur-sm p-4 space-y-3 ${judge.isExcluded ? 'opacity-50' : ''}`}>
+                                                <div className="flex items-center justify-between gap-4">
                                                     <div className="flex-1">
                                                         <input
                                                             type="text"
                                                             value={judge.name}
                                                             onChange={(e) => updateJudge(judge.id, 'name', e.target.value)}
-                                                            className="input bg-background/80 font-semibold text-royal-gold-light"
+                                                            className="input bg-background/80 font-semibold text-royal-gold-light min-w-[250px]"
                                                             placeholder={`${t.judgeLabel} ${judgeIndex + 1}`}
                                                         />
                                                     </div>
-                                                    <div className="flex items-center gap-2 ml-4">
+                                                    <div className="flex items-center gap-2">
                                                         <div className="flex items-center gap-2">
-                                                            <label className="text-xs">
+                                                            <label className="text-xs whitespace-nowrap">
                                                                 {judge.isHalfWeight ? t.halfImpact : t.fullImpact}
                                                             </label>
                                                             <Switch
@@ -757,7 +873,7 @@
                                                             value={judge.creativity}
                                                             onChange={(e) => updateJudge(judge.id, 'creativity', e.target.value)}
                                                             className="input bg-background/80"
-                                                            placeholder="0"
+                                                            placeholder=""
                                                         />
                                                     </div>
                                                     <div>
@@ -770,32 +886,34 @@
                                                             value={judge.quality}
                                                             onChange={(e) => updateJudge(judge.id, 'quality', e.target.value)}
                                                             className="input bg-background/80"
-                                                            placeholder="0"
+                                                            placeholder=""
                                                         />
                                                     </div>
                                                 </div>
-
+                                                
                                                 <div>
                                                     <div className="flex items-center justify-between mb-2">
                                                         <label className="text-sm font-medium">{t.specialCriteria}</label>
                                                         <div className="flex gap-2">
                                                             <button
-                                                                className="btn btn-outline btn-sm"
                                                                 onClick={() => addSpecialCriteria(judge.id)}
+                                                                className="btn btn-outline btn-sm border-royal-gold/30 hover:border-royal-gold"
                                                             >
-                                                                <Icon name="plus" />
+                                                                <Icon name="plus" className="h-3 w-3 mr-1" />
+                                                                {t.addCriteria}
                                                             </button>
                                                             {judge.specialCriteria.length > 1 && (
                                                                 <button
-                                                                    className="btn btn-outline btn-sm"
                                                                     onClick={() => removeSpecialCriteria(judge.id, judge.specialCriteria.length - 1)}
+                                                                    className="btn btn-destructive btn-sm"
                                                                 >
-                                                                    <Icon name="minus" />
+                                                                    <Icon name="minus" className="h-3 w-3 mr-1" />
+                                                                    {t.removeCriteria}
                                                                 </button>
                                                             )}
                                                         </div>
                                                     </div>
-                                                    <div className="grid grid-cols-2 gap-2">
+                                                    <div className="space-y-2">
                                                         {judge.specialCriteria.map((criteria, index) => (
                                                             <input
                                                                 key={index}
@@ -805,7 +923,7 @@
                                                                 step="0.1"
                                                                 value={criteria}
                                                                 onChange={(e) => updateSpecialCriteria(judge.id, index, e.target.value)}
-                                                                placeholder={`Criteria ${index + 1}`}
+                                                                placeholder=""
                                                                 className="input bg-background/80"
                                                             />
                                                         ))}
@@ -833,37 +951,68 @@
                                         </h3>
                                     </div>
                                     <div className="px-6 pb-6 space-y-4">
-                                        <div>
-                                            <label className="text-sm font-medium">{t.numberOfVoters}</label>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                value={audienceVoters}
-                                                onChange={(e) => setAudienceVoters(e.target.value)}
-                                                className="input bg-background/80"
-                                                placeholder="0"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="text-sm font-medium">{t.totalAudiencePoints}</label>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                value={audiencePoints}
-                                                onChange={(e) => setAudiencePoints(e.target.value)}
-                                                className="input bg-background/80"
-                                                placeholder="0"
-                                            />
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <label className="text-sm">
-                                                {audienceHalfWeight ? t.halfImpact : t.fullImpact}
-                                            </label>
-                                            <Switch
-                                                checked={audienceHalfWeight}
-                                                onCheckedChange={setAudienceHalfWeight}
-                                            />
-                                        </div>
+                                        {audienceMembers.map((member, index) => (
+                                            <div key={member.id} className="card border-royal-gold/30 bg-background/80 backdrop-blur-sm p-4 space-y-3">
+                                                <div className="flex items-center justify-between gap-4">
+                                                    <div className="text-sm font-medium text-royal-gold-light">
+                                                        {t.audienceMember} {index + 1}
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <label className="text-xs whitespace-nowrap">
+                                                                {member.isHalfWeight ? t.halfImpact : t.fullImpact}
+                                                            </label>
+                                                            <Switch
+                                                                checked={member.isHalfWeight}
+                                                                onCheckedChange={(checked) => updateAudienceMember(member.id, 'isHalfWeight', checked)}
+                                                            />
+                                                        </div>
+                                                        {audienceMembers.length > 1 && (
+                                                            <button
+                                                                className="btn btn-destructive btn-sm"
+                                                                onClick={() => removeAudienceMember(member.id)}
+                                                            >
+                                                                <Icon name="minus" />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <label className="text-sm font-medium">{t.numberOfVoters}</label>
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            value={member.voters}
+                                                            onChange={(e) => updateAudienceMember(member.id, 'voters', e.target.value)}
+                                                            className="input bg-background/80"
+                                                            placeholder=""
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-sm font-medium">{t.totalAudiencePoints}</label>
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            value={member.points}
+                                                            onChange={(e) => updateAudienceMember(member.id, 'points', e.target.value)}
+                                                            className="input bg-background/80"
+                                                            placeholder=""
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        
+                                        <button
+                                            onClick={addAudienceMember}
+                                            className="btn btn-outline w-full border-royal-gold/30 hover:border-royal-gold"
+                                        >
+                                            <Icon name="plus" className="h-4 w-4 mr-2" />
+                                            {t.addAudience}
+                                        </button>
+                                        
                                         <div>
                                             <label className="text-sm font-medium">{t.controlConstant}</label>
                                             <input
@@ -872,7 +1021,7 @@
                                                 value={controlConstant}
                                                 onChange={(e) => setControlConstant(e.target.value)}
                                                 className="input bg-background/80"
-                                                placeholder="20"
+                                                placeholder=""
                                             />
                                         </div>
                                     </div>
@@ -900,73 +1049,112 @@
                                             <div className="text-6xl font-bold bg-gradient-royal bg-clip-text text-transparent">
                                                 {result.finalScore.toFixed(2)}
                                             </div>
-                                            <p className="text-muted-foreground">{t.finalScore}</p>
-                                            
-                                            <div className="h-px bg-royal-gold/20 my-4"></div>
-                                            
-                                            <div className="grid grid-cols-2 gap-4 text-sm">
-                                                <div>
-                                                    <div className="text-2xl font-bold text-royal-gold-light">
-                                                        {result.judgesAverage.toFixed(2)}
-                                                    </div>
-                                                    <p className="text-muted-foreground">{t.judgesAverage}</p>
-                                                </div>
-                                                <div>
-                                                    <div className="text-2xl font-bold text-royal-gold-light">
-                                                        {result.audienceAverage.toFixed(2)}
-                                                    </div>
-                                                    <p className="text-muted-foreground">{t.audienceAverage}</p>
-                                                </div>
+                                            <div className="text-royal-gold-light text-lg font-medium">
+                                                {t.finalScore}
                                             </div>
                                             
-                                            <div className="text-center">
-                                                <div className="text-xl font-bold text-royal-gold-light">
-                                                    {result.audienceEffective.toFixed(2)}
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                                                <div className="bg-muted/30 rounded-lg p-4">
+                                                    <div className="text-2xl font-bold text-royal-gold">
+                                                        {result.judgesAverage.toFixed(2)}
+                                                    </div>
+                                                    <div className="text-sm text-muted-foreground">
+                                                        {t.judgesAverage}
+                                                    </div>
                                                 </div>
-                                                <p className="text-muted-foreground text-sm">{t.audienceEffective}</p>
+                                                <div className="bg-muted/30 rounded-lg p-4">
+                                                    <div className="text-2xl font-bold text-royal-gold">
+                                                        {result.audienceAverage.toFixed(2)}
+                                                    </div>
+                                                    <div className="text-sm text-muted-foreground">
+                                                        {t.audienceAverage}
+                                                    </div>
+                                                </div>
+                                                <div className="bg-muted/30 rounded-lg p-4">
+                                                    <div className="text-2xl font-bold text-royal-gold">
+                                                        {result.audienceEffective.toFixed(2)}
+                                                    </div>
+                                                    <div className="text-sm text-muted-foreground">
+                                                        {t.audienceEffective}
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
 
+                                    {/* Bias Detection */}
+                                    <div className="card border-kingdom-light bg-card/50 backdrop-blur-sm">
+                                        <div className="p-6 pb-4">
+                                            <h3 className="text-lg font-semibold text-royal-gold">
+                                                {t.biasDetection}
+                                            </h3>
+                                        </div>
+                                        <div className="px-6 pb-6 space-y-3">
+                                            {judges.map((judge, index) => (
+                                                <div key={judge.id} className="flex items-center justify-between bg-muted/30 rounded-lg p-3">
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="text-lg">
+                                                            {result.biasData[index]?.emoji}
+                                                        </span>
+                                                        <span className="font-medium">
+                                                            {judge.name || `${t.judgeLabel} ${index + 1}`}
+                                                        </span>
+                                                        <span className="text-sm text-muted-foreground">
+                                                            (Avg: {result.judgeAverages[index].toFixed(2)})
+                                                        </span>
+                                                    </div>
+                                                    <div className="tooltip">
+                                                        <span className="text-sm font-mono bg-card/50 px-2 py-1 rounded">
+                                                            Z: {result.biasData[index]?.zScore.toFixed(2)}
+                                                        </span>
+                                                        <div className="tooltip-content">
+                                                            {t.biasTooltip} {result.biasData[index]?.zScore.toFixed(3)}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Calculation Breakdown */}
                                     {showBreakdown && (
                                         <div className="card border-kingdom-light bg-card/50 backdrop-blur-sm">
                                             <div className="p-6 pb-4">
-                                                <h3 className="text-royal-gold font-semibold">{t.calculationBreakdown}</h3>
+                                                <button
+                                                    onClick={() => setShowBreakdown(!showBreakdown)}
+                                                    className="flex items-center justify-between w-full text-left"
+                                                >
+                                                    <h3 className="text-lg font-semibold text-royal-gold">
+                                                        {t.calculationBreakdown}
+                                                    </h3>
+                                                    <Icon name={showBreakdown ? "chevronUp" : "chevronDown"} />
+                                                </button>
                                             </div>
-                                            <div className="px-6 pb-6 space-y-3 text-sm">
+                                            <div className="px-6 pb-6 space-y-4">
                                                 <div>
-                                                    <h4 className="font-semibold text-royal-gold-light mb-2">{t.judgeAverages}</h4>
-                                                    {result.judgeAverages.map((avg, index) => (
-                                                        <div key={index} className="flex justify-between items-center">
-                                                            <span className="flex items-center gap-2">
-                                                                {judges[index]?.name || `${t.judgeLabel} ${index + 1}`}:
-                                                                {result.biasData[index] && (
-                                                                    <Tooltip content={`${t.biasTooltip} ${result.biasData[index].zScore.toFixed(2)}`}>
-                                                                        <span>{result.biasData[index].emoji}</span>
-                                                                    </Tooltip>
-                                                                )}
-                                                            </span>
-                                                            <span className="font-mono">
-                                                                {avg.toFixed(2)} 
-                                                                {judges[index]?.isHalfWeight ? ' (Half)' : ''} 
-                                                                {judges[index]?.isExcluded ? ' (Excluded)' : ''}
-                                                            </span>
-                                                        </div>
-                                                    ))}
+                                                    <h4 className="font-medium mb-2">{t.judgeAverages}</h4>
+                                                    <div className="space-y-1 font-mono text-xs bg-muted/30 p-3 rounded">
+                                                        {judges.map((judge, index) => (
+                                                            <div key={judge.id} className={judge.isExcluded ? 'line-through opacity-50' : ''}>
+                                                                {judge.name || `${t.judgeLabel} ${index + 1}`}: {result.judgeAverages[index].toFixed(2)}
+                                                                {judge.isHalfWeight && ' (Half)'}
+                                                                {judge.isExcluded && ' (Excluded)'}
+                                                            </div>
+                                                        ))}
+                                                    </div>
                                                 </div>
                                                 
-                                                <div className="h-px bg-royal-gold/20"></div>
-                                                
                                                 <div>
-                                                    <h4 className="font-semibold text-royal-gold-light mb-2">{t.formulaResults}</h4>
-                                                    <div className="space-y-1 font-mono text-xs">
+                                                    <h4 className="font-medium mb-2">{t.formulaResults}:</h4>
+                                                    <div className="space-y-1 font-mono text-xs bg-muted/30 p-3 rounded">
                                                         <div>Active Judges = {judges.filter(j => !j.isExcluded).length}</div>
                                                         <div>Judges Avg = {result.judgesAverage.toFixed(2)}</div>
-                                                        <div>Audience Avg = {result.audienceAverage.toFixed(2)} {audienceHalfWeight ? ' (Half)' : ''}</div>
+                                                        <div>Audience Avg = {result.audienceAverage.toFixed(2)}</div>
+                                                        <div>Total Voters = {result.totalVoters}</div>
                                                         <div>M = {Math.max(judges.filter(j => !j.isExcluded).length * 10, parseInt(controlConstant) || 20)}</div>
                                                         <div>Audience Effective = {result.audienceEffective.toFixed(2)}</div>
                                                         <div className="text-royal-gold">
-                                                            Final = ({result.judgesAverage.toFixed(2)} × 0.75) + ({result.audienceEffective.toFixed(2)} × 0.25) = {result.finalScore.toFixed(2)}
+                                                            Final Score = ({result.judgesAverage.toFixed(2)} × 0.75) + ({result.audienceEffective.toFixed(2)} × 0.25) = {result.finalScore.toFixed(2)}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -975,143 +1163,24 @@
                                     )}
                                 </div>
                             )}
-                        </div>
-                        
-                        {/* Transparency Link */}
-                        <div className="text-center mt-8">
-                            <button
-                                className="btn btn-ghost text-royal-gold hover:text-royal-gold-light underline"
-                                onClick={() => setShowTransparency(true)}
-                            >
-                                <Icon name="book" className="h-4 w-4 mr-2" />
-                                {t.exploreLogic}
-                            </button>
-                        </div>
 
-                        {/* Transparency Modal/Page */}
-                        {showTransparency && (
-                            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-                                <div className="bg-card max-w-4xl w-full max-h-[90vh] overflow-y-auto rounded-lg border border-royal-gold/30">
-                                    <div className="p-6">
-                                        <div className="flex justify-between items-center mb-6">
-                                            <h2 className="text-2xl font-bold text-royal-gold">{t.transparencyTitle}</h2>
-                                            <button
-                                                className="btn btn-ghost btn-sm"
-                                                onClick={() => setShowTransparency(false)}
-                                            >
-                                                ✕
-                                            </button>
-                                        </div>
-                                        
-                                        <div className="space-y-6 text-sm">
-                                            <div>
-                                                <h3 className="font-semibold text-royal-gold-light mb-2">
-                                                    {isArabic ? "1. متوسط المعايير الخاصة (لكل قاضي)" : "1. Special Criteria Average (per judge)"}
-                                                </h3>
-                                                <p className="font-mono bg-muted/30 p-2 rounded">
-                                                    Special_Criteria_Avg = (Criterion₁ + Criterion₂ + ... + Criterionₙ) ÷ n
-                                                </p>
-                                            </div>
-                                            
-                                            <div>
-                                                <h3 className="font-semibold text-royal-gold-light mb-2">
-                                                    {isArabic ? "2. متوسط القاضي" : "2. Judge Average"}
-                                                </h3>
-                                                <p className="font-mono bg-muted/30 p-2 rounded">
-                                                    Judge_Avg = (Creativity + Quality + Special_Criteria_Avg) ÷ 3
-                                                </p>
-                                                <p className="text-xs text-muted-foreground mt-1">
-                                                    {isArabic ? "إذا كان نصف التأثير: Judge_Avg = Judge_Avg ÷ 2" : "If half impact: Judge_Avg = Judge_Avg ÷ 2"}
-                                                </p>
-                                            </div>
-                                            
-                                            <div>
-                                                <h3 className="font-semibold text-royal-gold-light mb-2">
-                                                    {isArabic ? "3. متوسط القضاة العام" : "3. Overall Judges Average"}
-                                                </h3>
-                                                <p className="font-mono bg-muted/30 p-2 rounded">
-                                                    Judges_Avg = (Judge₁_Avg + Judge₂_Avg + ... + Judgeₙ_Avg) ÷ n
-                                                </p>
-                                                <p className="text-xs text-muted-foreground mt-1">
-                                                    {isArabic ? "فقط القضاة النشطين (غير المستبعدين) يتم تضمينهم" : "Only active (non-excluded) judges are included"}
-                                                </p>
-                                            </div>
-                                            
-                                            <div>
-                                                <h3 className="font-semibold text-royal-gold-light mb-2">
-                                                    {isArabic ? "4. متوسط الجمهور" : "4. Audience Average"}
-                                                </h3>
-                                                <p className="font-mono bg-muted/30 p-2 rounded">
-                                                    Audience_Avg = Total_Audience_Points ÷ Number_of_Voters
-                                                </p>
-                                                <p className="text-xs text-muted-foreground mt-1">
-                                                    {isArabic ? "إذا كان نصف التأثير: Audience_Avg = Audience_Avg ÷ 2" : "If half impact: Audience_Avg = Audience_Avg ÷ 2"}
-                                                </p>
-                                            </div>
-                                            
-                                            <div>
-                                                <h3 className="font-semibold text-royal-gold-light mb-2">
-                                                    {isArabic ? "5. الجمهور الفعال (عوائد متناقصة)" : "5. Audience Effective (diminishing returns)"}
-                                                </h3>
-                                                <p className="font-mono bg-muted/30 p-2 rounded">
-                                                    Audience_Effective = (N × Audience_Avg + M × Judges_Avg) ÷ (N + M)
-                                                </p>
-                                                <p className="text-xs text-muted-foreground mt-1">
-                                                    {isArabic ? "حيث: N = عدد المصوتين، M = max(القضاة_النشطين × 10، ثابت_التحكم)" : "Where: N = Number of voters, M = max(Active_Judges × 10, Control_Constant)"}
-                                                </p>
-                                            </div>
-                                            
-                                            <div>
-                                                <h3 className="font-semibold text-royal-gold-light mb-2">
-                                                    {isArabic ? "6. النتيجة النهائية" : "6. Final Score"}
-                                                </h3>
-                                                <p className="font-mono bg-muted/30 p-2 rounded">
-                                                    Final_Score = (Judges_Avg × 0.75) + (Audience_Effective × 0.25)
-                                                </p>
-                                            </div>
-                                            
-                                            <div>
-                                                <h3 className="font-semibold text-royal-gold-light mb-2">
-                                                    {isArabic ? "7. اكتشاف التحيز (طريقة Z-Score)" : "7. Bias Detection (Z-Score Method)"}
-                                                </h3>
-                                                <div className="space-y-2">
-                                                    <p className="font-mono bg-muted/30 p-2 rounded">
-                                                        Mean = Judges_Avg
-                                                    </p>
-                                                    <p className="font-mono bg-muted/30 p-2 rounded">
-                                                        StdDev = √(Σ(Judge_Avgᵢ - Mean)² ÷ n)
-                                                    </p>
-                                                    <p className="font-mono bg-muted/30 p-2 rounded">
-                                                        Z_Score = (Judge_Avg - Mean) ÷ StdDev
-                                                    </p>
-                                                    <div className="text-xs space-y-1">
-                                                        <p>🟢 {isArabic ? "أخضر: |Z| ≤ 1 (عادل/متسق)" : "Green: |Z| ≤ 1 (fair/consistent)"}</p>
-                                                        <p>🟡 {isArabic ? "أصفر: 1 < |Z| ≤ 2 (مشبوه/حدي)" : "Yellow: 1 < |Z| ≤ 2 (suspicious/borderline)"}</p>
-                                                        <p>🔴 {isArabic ? "أحمر: |Z| > 2 (متحيز/شاذ)" : "Red: |Z| > 2 (biased/outlier)"}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        
-                                        <div className="mt-6 pt-4 border-t border-royal-gold/20">
-                                            <button
-                                                onClick={() => setShowTransparency(false)}
-                                                className="btn btn-primary w-full"
-                                            >
-                                                {t.backToCalculator}
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
+                            {/* Transparency Link */}
+                            <div className="text-center pt-8">
+                                <button
+                                    onClick={() => setShowTransparency(true)}
+                                    className="btn btn-outline border-royal-gold/30 hover:border-royal-gold text-royal-gold hover:text-foreground"
+                                >
+                                    {t.exploreLogic}
+                                </button>
                             </div>
-                        )}
-                        
-                        {/* Footer */}
-                        <footer className="text-center mt-12 py-6 border-t border-royal-gold/20">
-                            <p className="text-muted-foreground text-sm">
-                                {t.copyright}
-                            </p>
-                        </footer>
+
+                            {/* Footer */}
+                            <div className="text-center pt-8 pb-4">
+                                <p className="text-muted-foreground text-sm">
+                                    {t.copyright}
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             );
