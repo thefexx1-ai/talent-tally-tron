@@ -323,17 +323,12 @@ const TalentCalculator = () => {
                 {judges.map((judge, judgeIndex) => (
                   <div key={judge.id} className="space-y-3 p-4 bg-muted/30 rounded-lg">
                     <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <Input
-                          value={judge.name}
-                          onChange={(e) => updateJudge(judge.id, 'name', e.target.value)}
-                          className="bg-background/80 font-semibold text-royal-gold-light"
-                          placeholder={`${t.judgeLabel} ${judgeIndex + 1}`}
-                        />
-                      </div>
-                      <div className="flex items-center gap-2 ml-4">
-                        <div className="flex items-center gap-2">
-                          <Label className="text-xs">
+                      <h4 className="font-semibold text-royal-gold-light">
+                        {t.judgeLabel} {judgeIndex + 1}
+                      </h4>
+                      <div className="flex items-center gap-2">
+                        <div className="flex flex-col items-center gap-1">
+                          <Label className="text-xs text-center">
                             {judge.isHalfWeight ? t.halfImpact : t.fullImpact}
                           </Label>
                           <Switch
