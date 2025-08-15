@@ -339,7 +339,8 @@
             const [isArabic, setIsArabic] = useState(false);
             const [isDarkMode, setIsDarkMode] = useState(true);
             const [audienceMembers, setAudienceMembers] = useState([
-                { id: 1, voters: '', points: '', isHalfWeight: false }
+                { id: 1, voters: '', points: '', isHalfWeight: false },
+                { id: 2, voters: '', points: '', isHalfWeight: true }
             ]);
             const [controlConstant, setControlConstant] = useState('');
             const [result, setResult] = useState(null);
@@ -351,12 +352,12 @@
                 en: {
                     title: "Rustic Got Talent Calculator",
                     withRegards: "With regards of COT",
-                    judges: "Judges",
-                    judgeLabel: "Judge",
+                    judges: "Referees",
+                    judgeLabel: "Referee",
                     creativity: "Creativity (0-10)",
                     quality: "Quality (0-10)",
                     specialCriteria: "Special Criteria",
-                    addJudge: "Add Judge",
+                    addJudge: "Add Referee",
                     addCriteria: "Add Criteria",
                     removeCriteria: "Remove Criteria",
                     halfImpact: "Half Impact",
@@ -368,32 +369,33 @@
                     calculateResult: "Calculate Result",
                     finalResults: "Final Results",
                     finalScore: "Final Score",
-                    judgesAverage: "Judges Average",
+                    judgesAverage: "Referees Average",
                     audienceAverage: "Audience Average",
                     audienceEffective: "Audience Effective",
                     calculationBreakdown: "Calculation Breakdown",
-                    judgeAverages: "Judge Averages:",
+                    judgeAverages: "Referee Averages:",
                     formulaResults: "Formula Results:",
                     biasDetection: "Bias Detection",
-                    excludeJudge: "Exclude Judge",
-                    includeJudge: "Include Judge",
+                    excludeJudge: "Exclude Referee",
+                    includeJudge: "Include Referee",
                     biasTooltip: "Z-score:",
                     exploreLogic: "Explore the full calculation logic behind Rustic Got Talent",
                     transparencyTitle: "Calculation Logic & Formulas",
                     backToCalculator: "Back to Calculator",
                     copyright: "© for Rustic Kingdom 🗝️ | developer: Adham",
                     addAudience: "Add Audience Member",
-                    audienceMember: "Audience Member"
+                    audienceMember: "Audience Member",
+                    fairnessNotice: "Note: The fairness assessment method provides statistical indicators but is not 100% accurate. Management should verify and double-check all results manually to ensure complete accuracy and fairness."
                 },
                 ar: {
                     title: "حاسبة مواهب راستيك",
                     withRegards: "مع تحيات فيلق المواهب",
-                    judges: "القضاة",
-                    judgeLabel: "القاضي",
+                    judges: "الحكام",
+                    judgeLabel: "الحكم",
                     creativity: "الإبداع (0-10)",
                     quality: "الجودة (0-10)",
                     specialCriteria: "المعايير الخاصة",
-                    addJudge: "إضافة قاضي",
+                    addJudge: "إضافة حكم",
                     addCriteria: "إضافة معيار",
                     removeCriteria: "إزالة معيار",
                     halfImpact: "نصف التأثير",
@@ -405,22 +407,23 @@
                     calculateResult: "احسب النتيجة",
                     finalResults: "النتائج النهائية",
                     finalScore: "النتيجة النهائية",
-                    judgesAverage: "متوسط القضاة",
+                    judgesAverage: "متوسط الحكام",
                     audienceAverage: "متوسط الجمهور",
                     audienceEffective: "الجمهور الفعال",
                     calculationBreakdown: "تفصيل الحساب",
-                    judgeAverages: "متوسط القضاة:",
+                    judgeAverages: "متوسط الحكام:",
                     formulaResults: "نتائج الصيغة:",
                     biasDetection: "كشف التحيز",
-                    excludeJudge: "استبعاد القاضي",
-                    includeJudge: "تضمين القاضي",
+                    excludeJudge: "استبعاد الحكم",
+                    includeJudge: "تضمين الحكم",
                     biasTooltip: "نقاط Z:",
                     exploreLogic: "استكشاف منطق الحساب الكامل وراء مواهب راستيك",
                     transparencyTitle: "منطق الحساب والصيغ",
                     backToCalculator: "العودة للحاسبة",
                     copyright: "© مملكة راستيك 🗝️ | المطور: أدهم",
                     addAudience: "إضافة عضو جمهور",
-                    audienceMember: "عضو الجمهور"
+                    audienceMember: "عضو الجمهور",
+                    fairnessNotice: "ملاحظة: طريقة تقييم العدالة توفر مؤشرات إحصائية ولكنها ليست دقيقة بنسبة 100%. يجب على الإدارة التحقق ومراجعة جميع النتائج يدوياً لضمان الدقة والعدالة الكاملة."
                 }
             };
 
@@ -488,21 +491,6 @@
                 ));
             };
 
-            const addAudienceMember = () => {
-                const newMember = {
-                    id: Date.now(),
-                    voters: '',
-                    points: '',
-                    isHalfWeight: false
-                };
-                setAudienceMembers([...audienceMembers, newMember]);
-            };
-
-            const removeAudienceMember = (id) => {
-                if (audienceMembers.length > 1) {
-                    setAudienceMembers(audienceMembers.filter(member => member.id !== id));
-                }
-            };
 
             const updateAudienceMember = (id, field, value) => {
                 setAudienceMembers(audienceMembers.map(member => 
@@ -742,9 +730,20 @@
                                     {isArabic ? "التحكم في التأثير" : "Impact Controls"}
                                 </h2>
                                 <div className="space-y-2 bg-muted/30 p-4 rounded">
-                                    <div>{isArabic ? "• نصف التأثير للقاضي: JudgeAvg_j = OriginalAvg / 2" : "• Half Impact for Judge: JudgeAvg_j = OriginalAvg / 2"}</div>
+                                    <div>{isArabic ? "• نصف التأثير للحكم: RefereeAvg_j = OriginalAvg / 2" : "• Half Impact for Referee: RefereeAvg_j = OriginalAvg / 2"}</div>
                                     <div>{isArabic ? "• نصف التأثير للجمهور: Audience_Avg = OriginalAvg / 2" : "• Half Impact for Audience: Audience_Avg = OriginalAvg / 2"}</div>
-                                    <div>{isArabic ? "• استبعاد القاضي: إزالة من حساب Judges_Avg" : "• Exclude Judge: Remove from Judges_Avg calculation"}</div>
+                                    <div>{isArabic ? "• استبعاد الحكم: إزالة من حساب Referees_Avg" : "• Exclude Referee: Remove from Referees_Avg calculation"}</div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h2 className="text-xl font-semibold text-royal-gold mb-4">
+                                    {isArabic ? "إشعار مهم" : "Important Notice"}
+                                </h2>
+                                <div className="bg-muted/30 p-4 rounded border border-royal-gold/30">
+                                    <p className="text-sm text-muted-foreground">
+                                        {t.fairnessNotice}
+                                    </p>
                                 </div>
                             </div>
 
@@ -953,30 +952,18 @@
                                     <div className="px-6 pb-6 space-y-4">
                                         {audienceMembers.map((member, index) => (
                                             <div key={member.id} className="card border-royal-gold/30 bg-background/80 backdrop-blur-sm p-4 space-y-3">
-                                                <div className="flex items-center justify-between gap-4">
-                                                    <div className="text-sm font-medium text-royal-gold-light">
-                                                        {t.audienceMember} {index + 1}
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="flex items-center gap-2">
-                                                            <label className="text-xs whitespace-nowrap">
-                                                                {member.isHalfWeight ? t.halfImpact : t.fullImpact}
-                                                            </label>
-                                                            <Switch
-                                                                checked={member.isHalfWeight}
-                                                                onCheckedChange={(checked) => updateAudienceMember(member.id, 'isHalfWeight', checked)}
-                                                            />
-                                                        </div>
-                                                        {audienceMembers.length > 1 && (
-                                                            <button
-                                                                className="btn btn-destructive btn-sm"
-                                                                onClick={() => removeAudienceMember(member.id)}
-                                                            >
-                                                                <Icon name="minus" />
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                </div>
+                                                 <div className="flex items-center justify-between gap-4">
+                                                     <div className="flex items-center gap-3">
+                                                         <img 
+                                                             src="https://lh3.googleusercontent.com/d/1AKhyfkwBZRTDumsR-E9Xqtz15D6dZ9-S" 
+                                                             alt="Logo" 
+                                                             className="h-6 w-auto"
+                                                         />
+                                                         <div className="text-sm font-medium text-royal-gold-light">
+                                                             {index === 0 ? 'Full Impact Audience' : 'Half Impact Audience'}
+                                                         </div>
+                                                     </div>
+                                                 </div>
                                                 
                                                 <div className="grid grid-cols-2 gap-3">
                                                     <div>
@@ -1005,13 +992,6 @@
                                             </div>
                                         ))}
                                         
-                                        <button
-                                            onClick={addAudienceMember}
-                                            className="btn btn-outline w-full border-royal-gold/30 hover:border-royal-gold"
-                                        >
-                                            <Icon name="plus" className="h-4 w-4 mr-2" />
-                                            {t.addAudience}
-                                        </button>
                                         
                                         <div>
                                             <label className="text-sm font-medium">{t.controlConstant}</label>
