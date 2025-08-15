@@ -321,12 +321,12 @@ const TalentCalculator = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 {judges.map((judge, judgeIndex) => (
-                  <div key={judge.id} className="space-y-3 p-4 bg-muted/30 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-semibold text-royal-gold-light">
+                  <div key={judge.id} className="p-3 bg-muted/30 rounded-lg">
+                    <div className="flex items-center justify-between gap-2">
+                      <h4 className="font-semibold text-royal-gold-light text-sm">
                         {t.judgeLabel} {judgeIndex + 1}
                       </h4>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
                         <div className="flex flex-col items-center gap-1">
                           <Label className="text-xs text-center">
                             {judge.isHalfWeight ? t.halfImpact : t.fullImpact}
@@ -336,16 +336,14 @@ const TalentCalculator = () => {
                             onCheckedChange={(checked) => updateJudge(judge.id, 'isHalfWeight', checked)}
                           />
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant={judge.isExcluded ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => updateJudge(judge.id, 'isExcluded', !judge.isExcluded)}
-                            className={judge.isExcluded ? "bg-destructive text-destructive-foreground" : ""}
-                          >
-                            {judge.isExcluded ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                          </Button>
-                        </div>
+                        <Button
+                          variant={judge.isExcluded ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => updateJudge(judge.id, 'isExcluded', !judge.isExcluded)}
+                          className={judge.isExcluded ? "bg-destructive text-destructive-foreground" : ""}
+                        >
+                          {judge.isExcluded ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                        </Button>
                         {judges.length > 1 && (
                           <Button
                             variant="destructive"
