@@ -322,9 +322,9 @@ const TalentCalculator = () => {
               <CardContent className="space-y-4">
                 {judges.map((judge, judgeIndex) => (
                   <div key={judge.id} className="p-2 bg-muted/30 rounded-lg">
-                    <div className="flex items-center justify-between gap-2">
-                      <h4 className="font-medium text-royal-gold-light text-xs">
-                        {t.judgeLabel} {judgeIndex + 1}
+                    <div className="flex items-center justify-between gap-1">
+                      <h4 className="font-medium text-royal-gold-light text-xs min-w-0 flex-shrink">
+                        R{judgeIndex + 1}
                       </h4>
                       <div className="flex items-center gap-1">
                         <div className="flex flex-col items-center gap-1">
