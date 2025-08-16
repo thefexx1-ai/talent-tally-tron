@@ -322,18 +322,19 @@ const TalentCalculator = () => {
               <CardContent className="space-y-4">
                 {judges.map((judge, judgeIndex) => (
                   <div key={judge.id} className="p-2 bg-muted/30 rounded-lg">
-                    <div className="flex items-center justify-between gap-1">
-                      <h4 className="font-medium text-royal-gold-light text-xs min-w-0 flex-shrink">
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] font-medium text-royal-gold-light min-w-[16px] flex-shrink-0">
                         R{judgeIndex + 1}
-                      </h4>
-                      <div className="flex items-center gap-1">
-                        <div className="flex flex-col items-center gap-1">
-                          <Label className="text-xs text-center">
+                      </span>
+                      <div className="flex items-center gap-1 flex-1">
+                        <div className="flex flex-col items-center gap-0.5">
+                          <Label className="text-[10px] text-center leading-tight">
                             {judge.isHalfWeight ? t.halfImpact : t.fullImpact}
                           </Label>
                           <Switch
                             checked={judge.isHalfWeight}
                             onCheckedChange={(checked) => updateJudge(judge.id, 'isHalfWeight', checked)}
+                            className="scale-75"
                           />
                         </div>
                         <Button
