@@ -824,11 +824,11 @@
                                             <div key={judge.id} className={`card border-royal-gold/30 bg-background/80 backdrop-blur-sm p-4 space-y-3 ${judge.isExcluded ? 'opacity-50' : ''}`}>
                                                 <div className="flex items-center justify-between gap-4">
                                                     <div className="flex-1">
-                                                        <input
+                                                         <input
                                                             type="text"
                                                             value={judge.name}
                                                             onChange={(e) => updateJudge(judge.id, 'name', e.target.value)}
-                                                            className="input bg-background/80 font-semibold text-royal-gold-light min-w-[250px]"
+                                                            className="input bg-background/80 font-semibold text-royal-gold-light w-full max-w-[150px] sm:max-w-[200px]"
                                                             placeholder={`${t.judgeLabel} ${judgeIndex + 1}`}
                                                         />
                                                     </div>
